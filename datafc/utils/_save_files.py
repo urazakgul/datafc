@@ -2,7 +2,7 @@ import json
 import pandas as pd
 import inspect
 
-def save_json(data: pd.DataFrame, country: str, tournament: int, season: int = None, week_number: int = None) -> None:
+def save_json(data: pd.DataFrame, data_source: str,  country: str, tournament: int, season: int = None, week_number: int = None) -> None:
     calling_function = inspect.stack()[1].function
 
     country = country.lower().replace(" ", "_")
@@ -13,11 +13,11 @@ def save_json(data: pd.DataFrame, country: str, tournament: int, season: int = N
             season = season.replace("/", "")
 
     if season is not None and week_number is not None:
-        file_name = f"{country}_{tournament}_{season}_{week_number}_{calling_function}.json"
+        file_name = f"{data_source}_{country}_{tournament}_{season}_{week_number}_{calling_function}.json"
     elif season is not None:
-        file_name = f"{country}_{tournament}_{season}_{calling_function}.json"
+        file_name = f"{data_source}_{country}_{tournament}_{season}_{calling_function}.json"
     else:
-        file_name = f"{country}_{tournament}_{calling_function}.json"
+        file_name = f"{data_source}_{country}_{tournament}_{calling_function}.json"
 
     try:
         with open(file_name, "w", encoding="utf-8") as json_file:
@@ -26,7 +26,7 @@ def save_json(data: pd.DataFrame, country: str, tournament: int, season: int = N
     except Exception as e:
         print(f"Error saving JSON: {e}")
 
-def save_excel(data: pd.DataFrame, country: str, tournament: int, season: int = None, week_number: int = None) -> None:
+def save_excel(data: pd.DataFrame, data_source: str, country: str, tournament: int, season: int = None, week_number: int = None) -> None:
     calling_function = inspect.stack()[1].function
 
     country = country.lower().replace(" ", "_")
@@ -37,11 +37,11 @@ def save_excel(data: pd.DataFrame, country: str, tournament: int, season: int = 
             season = season.replace("/", "")
 
     if season is not None and week_number is not None:
-        file_name = f"{country}_{tournament}_{season}_{week_number}_{calling_function}.xlsx"
+        file_name = f"{data_source}_{country}_{tournament}_{season}_{week_number}_{calling_function}.xlsx"
     elif season is not None:
-        file_name = f"{country}_{tournament}_{season}_{calling_function}.xlsx"
+        file_name = f"{data_source}_{country}_{tournament}_{season}_{calling_function}.xlsx"
     else:
-        file_name = f"{country}_{tournament}_{calling_function}.xlsx"
+        file_name = f"{data_source}_{country}_{tournament}_{calling_function}.xlsx"
 
     try:
         data.to_excel(file_name, index=False)

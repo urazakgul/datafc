@@ -119,6 +119,7 @@ def lineups_data(
             if enable_json_export:
                 save_json(
                     data=extracted_lineups_data_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -128,6 +129,7 @@ def lineups_data(
             if enable_excel_export:
                 save_excel(
                     data=extracted_lineups_data_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],

@@ -71,17 +71,18 @@ def match_stats_data(
             except json.JSONDecodeError:
                 raise RuntimeError(f"Failed to decode match statistics for game {game_id}.")
 
-        game_statistics_dataframe = pd.DataFrame(statistics_list)
+        game_statistics_df = pd.DataFrame(statistics_list)
 
-        if game_statistics_dataframe.empty:
+        if game_statistics_df.empty:
             raise ValueError("No match statistics data found for the specified parameters.")
 
         if enable_json_export or enable_excel_export:
-            first_row = game_statistics_dataframe.iloc[0]
+            first_row = game_statistics_df.iloc[0]
 
             if enable_json_export:
                 save_json(
-                    data=game_statistics_dataframe,
+                    data=game_statistics_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -90,14 +91,15 @@ def match_stats_data(
 
             if enable_excel_export:
                 save_excel(
-                    data=game_statistics_dataframe,
+                    data=game_statistics_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
                     week_number=first_row["week"]
                 )
 
-        return game_statistics_dataframe
+        return game_statistics_df
 
     except WebDriverException as e:
         raise RuntimeError(f"Selenium WebDriver error: {str(e)}")

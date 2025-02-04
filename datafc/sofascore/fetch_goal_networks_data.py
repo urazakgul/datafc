@@ -124,6 +124,7 @@ def goal_networks_data(
             if enable_json_export:
                 save_json(
                     data=actions_list_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -133,6 +134,7 @@ def goal_networks_data(
             if enable_excel_export:
                 save_excel(
                     data=actions_list_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],

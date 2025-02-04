@@ -70,17 +70,18 @@ def standings_data(
             except json.JSONDecodeError:
                 raise RuntimeError(f"Failed to decode standings data for category {category}.")
 
-        points_table_dataframe = pd.DataFrame(points_table_list)
+        points_table_df = pd.DataFrame(points_table_list)
 
-        if points_table_dataframe.empty:
+        if points_table_df.empty:
             raise ValueError("No standings data found for the specified parameters.")
 
         if enable_json_export or enable_excel_export:
-            first_row = points_table_dataframe.iloc[0]
+            first_row = points_table_df.iloc[0]
 
             if enable_json_export:
                 save_json(
-                    data=points_table_dataframe,
+                    data=points_table_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=None,
@@ -89,14 +90,15 @@ def standings_data(
 
             if enable_excel_export:
                 save_excel(
-                    data=points_table_dataframe,
+                    data=points_table_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=None,
                     week_number=None
                 )
 
-        return points_table_dataframe
+        return points_table_df
 
     except WebDriverException as e:
         raise RuntimeError(f"Selenium WebDriver error: {str(e)}")

@@ -60,7 +60,11 @@ def match_data(
             "week": events_df["roundInfo"].apply(lambda x: x.get("round", "")),
             "game_id": events_df["id"],
             "home_team": events_df["homeTeam"].apply(lambda x: x.get("name", "")),
+            "home_team_id": events_df["homeTeam"].apply(lambda x: x.get("id", "")),
             "away_team": events_df["awayTeam"].apply(lambda x: x.get("name", "")),
+            "away_team_id": events_df["awayTeam"].apply(lambda x: x.get("id", "")),
+            "injury_time_1": events_df["time"].apply(lambda x: x.get("injuryTime1", "")),
+            "injury_time_2": events_df["time"].apply(lambda x: x.get("injuryTime2", "")),
             "start_timestamp": events_df["startTimestamp"],
             "status": events_df["status"].apply(lambda x: x.get("description", ""))
         })
@@ -71,6 +75,7 @@ def match_data(
             if enable_json_export:
                 save_json(
                     data=match_data_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -80,6 +85,7 @@ def match_data(
             if enable_excel_export:
                 save_excel(
                     data=match_data_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],

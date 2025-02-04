@@ -70,17 +70,18 @@ def substitutions_data(
             except json.JSONDecodeError:
                 raise RuntimeError(f"Failed to decode substitution data for game {game_id}.")
 
-        substitutions_dataframe = pd.DataFrame(substitutions_list)
+        substitutions_df = pd.DataFrame(substitutions_list)
 
-        if substitutions_dataframe.empty:
+        if substitutions_df.empty:
             raise ValueError("No substitution data found for the specified parameters.")
 
         if enable_json_export or enable_excel_export:
-            first_row = substitutions_dataframe.iloc[0]
+            first_row = substitutions_df.iloc[0]
 
             if enable_json_export:
                 save_json(
-                    data=substitutions_dataframe,
+                    data=substitutions_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -89,14 +90,15 @@ def substitutions_data(
 
             if enable_excel_export:
                 save_excel(
-                    data=substitutions_dataframe,
+                    data=substitutions_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
                     week_number=first_row["week"]
                 )
 
-        return substitutions_dataframe
+        return substitutions_df
 
     except WebDriverException as e:
         raise RuntimeError(f"Selenium WebDriver error: {str(e)}")

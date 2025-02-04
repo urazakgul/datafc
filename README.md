@@ -1,4 +1,4 @@
-# datafc v1.0.0
+# datafc v1.0.1
 
 ## Overview
 
@@ -37,7 +37,13 @@ pip install git+https://github.com/urazakgul/datafc.git
 To install a specific version of `datafc`, use:
 
 ```bash
-pip install datafc==1.0.0
+pip install datafc==1.0.1
+```
+
+If you already have `datafc` installed and want to upgrade to the latest version, run:
+
+```bash
+pip install --upgrade datafc
 ```
 
 ## Why Selenium?
@@ -126,7 +132,7 @@ Unlike the other functions, `standings_data` does not require `match_data` or `l
 
 #### `match_data`
 
-The `match_data` function fetches match data for a specified tournament, season, and matchweek. It returns a DataFrame containing details such as country, tournament name, season, week number, game ID, home team, away team, start timestamp, and match status.
+The `match_data` function fetches match data for a specified tournament, season, and matchweek. It returns a DataFrame containing details such as country, tournament name, season, week number, game ID, home team, home team ID, away team, away team ID, added injury times for both halves, start timestamp, and match status.
 
 Example Usage:
 
@@ -164,7 +170,11 @@ The returned DataFrame includes the following columns:
 * `week`: The matchweek number.
 * `game_id`: The unique identifier for the match.
 * `home_team`: The name of the home team.
+* `home_team_id`: The unique identifier for the home team.
 * `away_team`: The name of the away team.
+* `away_team_id`: The unique identifier for the away team.
+* `injury_time_1`: Added injury time in the first half.
+* `injury_time_2`: Added injury time in the second half.
 * `start_timestamp`: The start time of the match.
 * `status`: The current status of the match.
 
@@ -622,13 +632,15 @@ Dependencies:
 
 ## Changelog
 
-* v0.1.0
+* v1.0.1
+  * Added 4 new columns to `match_data`
+  * Added `data_source` parameter to `save_json` and `save_excel` for including the source in file names
+
+* v1.0.0
   * Initial release of `datafc`
   * Fetching match data using Selenium WebDriver
   * Supports Sofascore as a data source
   * Exports data in JSON and Excel formats
-
-Future releases will include additional features and bug fixes.
 
 ## License
 

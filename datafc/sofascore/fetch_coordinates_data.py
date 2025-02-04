@@ -89,6 +89,7 @@ def coordinates_data(
             if enable_json_export:
                 save_json(
                     data=heatmap_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -98,6 +99,7 @@ def coordinates_data(
             if enable_excel_export:
                 save_excel(
                     data=heatmap_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],

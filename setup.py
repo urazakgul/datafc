@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="datafc",
-    version="1.0.0",
+    version="1.0.1",
     author="Uraz Akgül",
     author_email="urazdev@gmail.com",
     description="A scalable Python library for fetching, processing, and exporting structured football match data.",

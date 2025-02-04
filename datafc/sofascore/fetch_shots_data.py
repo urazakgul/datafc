@@ -102,17 +102,18 @@ def shots_data(
             except json.JSONDecodeError:
                 raise RuntimeError(f"Failed to decode shot data for game {game_id}.")
 
-        shotmap_dataframe = pd.DataFrame(shotmap_list)
+        shotmap_df = pd.DataFrame(shotmap_list)
 
-        if shotmap_dataframe.empty:
+        if shotmap_df.empty:
             raise ValueError("No shot data found for the specified parameters.")
 
         if enable_json_export or enable_excel_export:
-            first_row = shotmap_dataframe.iloc[0]
+            first_row = shotmap_df.iloc[0]
 
             if enable_json_export:
                 save_json(
-                    data=shotmap_dataframe,
+                    data=shotmap_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -121,14 +122,15 @@ def shots_data(
 
             if enable_excel_export:
                 save_excel(
-                    data=shotmap_dataframe,
+                    data=shotmap_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
                     week_number=first_row["week"]
                 )
 
-        return shotmap_dataframe
+        return shotmap_df
 
     except WebDriverException as e:
         raise RuntimeError(f"Selenium WebDriver error: {str(e)}")

@@ -73,17 +73,18 @@ def match_odds_data(
             except json.JSONDecodeError:
                 raise RuntimeError(f"Failed to decode odds data for game {game_id}.")
 
-        game_odds_dataframe = pd.DataFrame(odds_list)
+        game_odds_df = pd.DataFrame(odds_list)
 
-        if game_odds_dataframe.empty:
+        if game_odds_df.empty:
             raise ValueError("No match odds data found for the specified parameters.")
 
         if enable_json_export or enable_excel_export:
-            first_row = game_odds_dataframe.iloc[0]
+            first_row = game_odds_df.iloc[0]
 
             if enable_json_export:
                 save_json(
-                    data=game_odds_dataframe,
+                    data=game_odds_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
@@ -92,14 +93,15 @@ def match_odds_data(
 
             if enable_excel_export:
                 save_excel(
-                    data=game_odds_dataframe,
+                    data=game_odds_df,
+                    data_source=data_source,
                     country=first_row["country"],
                     tournament=first_row["tournament"],
                     season=first_row["season"],
                     week_number=first_row["week"]
                 )
 
-        return game_odds_dataframe
+        return game_odds_df
 
     except WebDriverException as e:
         raise RuntimeError(f"Selenium WebDriver error: {str(e)}")
