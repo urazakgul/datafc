@@ -1,4 +1,4 @@
-# datafc v1.0.1
+# datafc v1.1.0
 
 ## Overview
 
@@ -37,7 +37,7 @@ pip install git+https://github.com/urazakgul/datafc.git
 To install a specific version of `datafc`, use:
 
 ```bash
-pip install datafc==1.0.1
+pip install datafc==1.1.0
 ```
 
 If you already have `datafc` installed and want to upgrade to the latest version, run:
@@ -632,7 +632,7 @@ Dependencies:
 
 ## Changelog
 
-* v1.0.1
+* v1.1.0
   * Added 4 new columns to `match_data`
   * Added `data_source` parameter to `save_json` and `save_excel` for including the source in file names
 
