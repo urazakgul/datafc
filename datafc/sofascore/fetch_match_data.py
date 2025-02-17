@@ -66,7 +66,17 @@ def match_data(
             "injury_time_1": events_df["time"].apply(lambda x: x.get("injuryTime1", "")),
             "injury_time_2": events_df["time"].apply(lambda x: x.get("injuryTime2", "")),
             "start_timestamp": events_df["startTimestamp"],
-            "status": events_df["status"].apply(lambda x: x.get("description", ""))
+            "status": events_df["status"].apply(lambda x: x.get("description", "")),
+            "home_score_current": events_df["homeScore"].apply(lambda x: x.get("current", "")),
+            "home_score_display": events_df["homeScore"].apply(lambda x: x.get("display", "")),
+            "home_score_period1": events_df["homeScore"].apply(lambda x: x.get("period1", "")),
+            "home_score_period2": events_df["homeScore"].apply(lambda x: x.get("period2", "")),
+            "home_score_normaltime": events_df["homeScore"].apply(lambda x: x.get("normaltime", "")),
+            "away_score_current": events_df["awayScore"].apply(lambda x: x.get("current", "")),
+            "away_score_display": events_df["awayScore"].apply(lambda x: x.get("display", "")),
+            "away_score_period1": events_df["awayScore"].apply(lambda x: x.get("period1", "")),
+            "away_score_period2": events_df["awayScore"].apply(lambda x: x.get("period2", "")),
+            "away_score_normaltime": events_df["awayScore"].apply(lambda x: x.get("normaltime", ""))
         })
 
         if enable_json_export or enable_excel_export:

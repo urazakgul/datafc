@@ -1,4 +1,4 @@
-# datafc v1.1.0
+# datafc v1.2.0
 
 ## Overview
 
@@ -37,7 +37,7 @@ pip install git+https://github.com/urazakgul/datafc.git
 To install a specific version of `datafc`, use:
 
 ```bash
-pip install datafc==1.1.0
+pip install datafc==1.2.0
 ```
 
 If you already have `datafc` installed and want to upgrade to the latest version, run:
@@ -132,7 +132,7 @@ Unlike the other functions, `standings_data` does not require `match_data` or `l
 
 #### `match_data`
 
-The `match_data` function fetches match data for a specified tournament, season, and matchweek. It returns a DataFrame containing details such as country, tournament name, season, week number, game ID, home team, home team ID, away team, away team ID, added injury times for both halves, start timestamp, and match status.
+The `match_data` function fetches match data for a specified tournament, season, and matchweek. It returns a DataFrame containing details such as country, tournament name, season, week number, game ID, home team, home team ID, away team, away team ID, added injury times for both halves, start timestamp, match status, and score-related information.
 
 Example Usage:
 
@@ -177,6 +177,16 @@ The returned DataFrame includes the following columns:
 * `injury_time_2`: Added injury time in the second half.
 * `start_timestamp`: The start time of the match.
 * `status`: The current status of the match.
+* `home_score_current`: The latest recorded score for the home team.
+* `home_score_display`: The displayed score of the home team.
+* `home_score_period1`: The home team's score at the end of the first half.
+* `home_score_period2`: The home team's goals scored in the second half.
+* `home_score_normaltime`: The home team's final score at the end of normal time (90 minutes).
+* `away_score_current`: The latest recorded score for the away team.
+* `away_score_display`: The displayed score of the away team.
+* `away_score_period1`: The away team's score at the end of the first half.
+* `away_score_period2`: The away team's goals scored in the second half.
+* `away_score_normaltime`: The away team's final score at the end of normal time (90 minutes).
 
 Dependencies:
 
@@ -632,9 +642,14 @@ Dependencies:
 
 ## Changelog
 
+* v1.2.0
+  * Added match score columns to `match_data`
+
 * v1.1.0
   * Added 4 new columns to `match_data`
   * Added `data_source` parameter to `save_json` and `save_excel` for including the source in file names
+
+* v1.0.1 (Cancelled, not used)
 
 * v1.0.0
   * Initial release of `datafc`
