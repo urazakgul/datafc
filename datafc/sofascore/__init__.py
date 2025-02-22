@@ -8,6 +8,7 @@ from .fetch_coordinates_data import coordinates_data
 from .fetch_substitutions_data import substitutions_data
 from .fetch_match_odds_data import match_odds_data
 from .fetch_momentum_data import momentum_data
+from .fetch_past_matches_data import past_matches_data
 
 __all__ = [
     "match_data",
@@ -19,5 +20,6 @@ __all__ = [
     "coordinates_data",
     "substitutions_data",
     "match_odds_data",
-    "momentum_data"
+    "momentum_data",
+    "past_matches_data"
 ]

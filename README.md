@@ -1,4 +1,4 @@
-# datafc v1.2.0
+# datafc v1.3.0
 
 ## Overview
 
@@ -37,7 +37,7 @@ pip install git+https://github.com/urazakgul/datafc.git
 To install a specific version of `datafc`, use:
 
 ```bash
-pip install datafc==1.2.0
+pip install datafc==1.3.0
 ```
 
 If you already have `datafc` installed and want to upgrade to the latest version, run:
@@ -89,6 +89,7 @@ from datafc.sofascore import (
     match_odds_data,
     match_stats_data,
     momentum_data,
+    past_matches_data,
     lineups_data,
     coordinates_data,
     substitutions_data,
@@ -124,20 +125,19 @@ The `lineups_data` function fetches player lineup details for each match and is 
 
 Without `lineups_data`, these dependent functions will not work as expected.
 
-Exception: `standings_data`
+Exception: `standings_data` and `past_matches_data`
 
-Unlike the other functions, `standings_data` does not require `match_data` or `lineups_data`. It can be executed independently using only `tournament_id` and `season_id`.
+Unlike other functions, `standings_data` and `past_matches_data` do not require `match_data` or `lineups_data`. They can be executed independently using only `tournament_id` and `season_id`. Additionally, `past_matches_data` includes an extra field: `week_number`.
 
 ### Match Data
 
 #### `match_data`
 
-The `match_data` function fetches match data for a specified tournament, season, and matchweek. It returns a DataFrame containing details such as country, tournament name, season, week number, game ID, home team, home team ID, away team, away team ID, added injury times for both halves, start timestamp, match status, and score-related information.
+The `match_data` function fetches match data for a specified tournament, season, and matchweek.
 
 Example Usage:
 
 ```python
-# Fetch match data for a specific tournament, season, and week
 match_df = match_data(
     tournament_id=52,
     season_id=63814,
@@ -194,12 +194,11 @@ Dependencies:
 
 #### `match_odds_data`
 
-The `match_odds_data` function fetches betting odds data for each match in the provided match dataset. It returns a DataFrame containing match odds details, including market names, odds values, and whether the odds changed.
+The `match_odds_data` function fetches betting odds data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch match odds data
 match_odds_df = match_odds_data(
     match_df=match_df,
     data_source="sofascore",
@@ -242,12 +241,11 @@ Dependencies:
 
 #### `match_stats_data`
 
-The `match_stats_data` function fetches statistical data for each match in the provided match dataset. It returns a DataFrame containing key match statistics, including team performance metrics.
+The `match_stats_data` function fetches statistical data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch match statistics data
 match_stats_df = match_stats_data(
     match_df=match_df,
     data_source="sofascore",
@@ -287,12 +285,11 @@ Dependencies:
 
 #### `momentum_data`
 
-The `momentum_data` function fetches momentum data for each match in the provided match dataset. It returns a DataFrame containing match momentum values over time.
+The `momentum_data` function fetches momentum data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch momentum data
 momentum_df = momentum_data(
     match_df=match_df,
     data_source="sofascore",
@@ -327,16 +324,76 @@ Dependencies:
 
 * Requires `match_data` output as `match_df`.
 
-### Player Data
+#### `past_matches_data`
 
-#### `lineups_data`
-
-The `lineups_data` function fetches lineup data for each match in the provided match dataset. It returns a DataFrame containing lineup details such as country, tournament name, season, week number, game ID, team, player name, player ID, statistic name, and statistic value.
+The `past_matches_data` function fetches past match data for a specified tournament, season, and week number.
 
 Example Usage:
 
 ```python
-# Fetch lineups data based on match data
+past_matches_df = past_matches_data(
+    tournament_id=52,
+    season_id=63814,
+    week_number=21,
+    data_source="sofascore",
+    enable_json_export=True,
+    enable_excel_export=True
+)
+
+print(past_matches_df)
+```
+
+Parameters:
+
+* `tournament_id` (int): The unique identifier for the tournament.
+* `season_id` (int): The unique identifier for the season.
+* `week_number` (int): The matchweek number within the season.
+* `data_source` (str): The data source (`sofavpn` or `sofascore`). Defaults to `sofascore`.
+* `element_load_timeout` (int): The maximum time (in seconds) to wait for the API response. Defaults to 10.
+* `enable_json_export` (bool): If `True`, exports the fetched data as a JSON file. Defaults to `False`.
+* `enable_excel_export` (bool): If `True`, exports the fetched data as an Excel file. Defaults to `False`.
+
+Data Structure:
+
+The returned DataFrame includes the following columns:
+
+* `country`: The country where the tournament is held.
+* `tournament`: The name of the tournament.
+* `season`: The season year.
+* `week`: The matchweek number.
+* `game_id`: The unique identifier for the match.
+* `home_team`: The name of the home team.
+* `home_team_id`: The unique identifier for the home team.
+* `away_team`: The name of the away team.
+* `away_team_id`: The unique identifier for the away team.
+* `injury_time_1`: Added injury time in the first half.
+* `injury_time_2`: Added injury time in the second half.
+* `start_timestamp`: The start time of the match.
+* `status`: The current status of the match.
+* `home_score_current`: The latest recorded score for the home team.
+* `home_score_display`: The displayed score of the home team.
+* `home_score_period1`: The home team's score at the end of the first half.
+* `home_score_period2`: The home team's goals scored in the second half.
+* `home_score_normaltime`: The home team's final score at the end of normal time (90 minutes).
+* `away_score_current`: The latest recorded score for the away team.
+* `away_score_display`: The displayed score of the away team.
+* `away_score_period1`: The away team's score at the end of the first half.
+* `away_score_period2`: The away team's goals scored in the second half.
+* `away_score_normaltime`: The away team's final score at the end of normal time (90 minutes).
+
+Dependencies:
+
+* No prior function dependency required.
+
+### Player Data
+
+#### `lineups_data`
+
+The `lineups_data` function fetches lineup data for each match in the provided match dataset.
+
+Example Usage:
+
+```python
 lineups_df = lineups_data(
     match_df=match_df,
     data_source="sofascore",
@@ -376,12 +433,11 @@ Dependencies:
 
 #### `coordinates_data`
 
-The `coordinates_data` function fetches coordinate data for each player in the provided lineup dataset. It returns a DataFrame containing coordinate details such as country, tournament name, season, week number, game ID, team, player ID, player name, and x-y coordinates.
+The `coordinates_data` function fetches coordinate data for each player in the provided lineup dataset.
 
 Example Usage:
 
 ```python
-# Fetch coordinates data
 coordinates_df = coordinates_data(
     lineups_df=lineups_df,
     data_source="sofascore",
@@ -421,12 +477,11 @@ Dependencies:
 
 #### `substitutions_data`
 
-The `substitutions_data` function fetches substitution data for each match in the provided match dataset. It returns a DataFrame containing details of player substitutions, including the players involved and the time of the substitution.
+The `substitutions_data` function fetches substitution data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch substitution data
 substitutions_df = substitutions_data(
     match_df=match_df,
     data_source="sofascore",
@@ -468,12 +523,11 @@ Dependencies:
 
 #### `goal_networks_data`
 
-The `goal_networks_data` function fetches goal network data for each match in the provided match dataset. It returns a DataFrame containing goal-related events, including passing networks and shot locations.
+The `goal_networks_data` function fetches goal network data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch goal networks data
 goal_networks_df = goal_networks_data(
     match_df=match_df,
     data_source="sofascore",
@@ -525,12 +579,11 @@ Dependencies:
 
 #### `shots_data`
 
-The `shots_data` function fetches shot data for each match in the provided match dataset. It returns a DataFrame containing detailed shot-related information, including player coordinates, xG values, shot types, and goal mouth locations.
+The `shots_data` function fetches shot data for each match in the provided match dataset.
 
 Example Usage:
 
 ```python
-# Fetch shot data
 shots_df = shots_data(
     match_df=match_df,
     data_source="sofascore",
@@ -592,12 +645,11 @@ Dependencies:
 
 #### `standings_data`
 
-The `standings_data` function fetches league standings for a specific tournament and season. It returns a DataFrame containing team rankings, match results, and points.
+The `standings_data` function fetches league standings for a specific tournament and season.
 
 Example Usage:
 
 ```python
-# Fetch league standings
 standings_df = standings_data(
     tournament_id=52,
     season_id=63814,
@@ -641,6 +693,9 @@ Dependencies:
 * No prior function dependency required.
 
 ## Changelog
+
+* v1.3.0
+  * Added `past_matches_data` function to fetch historical match data.
 
 * v1.2.0
   * Added match score columns to `match_data`
