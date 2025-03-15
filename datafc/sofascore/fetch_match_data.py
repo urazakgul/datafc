@@ -6,12 +6,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from datafc.utils._setup_webdriver import setup_webdriver
 from datafc.utils._save_files import save_json, save_excel
-from datafc.utils._config import ALLOWED_SOURCES, API_BASE_URLS
+from datafc.utils._config import ALLOWED_SOURCES, API_BASE_URLS, TOURNAMENT_URL_PATTERNS
 
 def match_data(
     tournament_id: int,
     season_id: int,
     week_number: int,
+    tournament_type: str = None,
+    tournament_stage: str = None,
     data_source: str = "sofascore",
     element_load_timeout: int = 10,
     enable_json_export: bool = False,
@@ -24,6 +26,9 @@ def match_data(
         tournament_id (int): The unique identifier for the tournament.
         season_id (int): The unique identifier for the season.
         week_number (int): The matchweek number within the season.
+        tournament_type (str, optional): The tournament type ('uefa'). If `None`, assumes league format.
+            - 'uefa' is used for UEFA competitions such as 'ucl' (Champions League), 'uel' (Europa League), 'uecl' (Europa Conference League), or 'unl' (Nations League).
+        tournament_stage (str, optional): The specific stage of the tournament (e.g., 'qualification_round', 'group_stage_week', 'round_of_16', etc.).
         data_source (str): The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
         element_load_timeout (int): The maximum time (in seconds) to wait for the API response. Defaults to 10.
         enable_json_export (bool): If `True`, exports the fetched data as a JSON file. Defaults to `False`.
@@ -32,7 +37,40 @@ def match_data(
     if data_source not in ALLOWED_SOURCES:
         raise ValueError(f"Invalid data source: {data_source}. Must be one of {ALLOWED_SOURCES}")
 
-    api_request_url = f"{API_BASE_URLS[data_source]}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}"
+    base_url = API_BASE_URLS[data_source]
+
+    if tournament_type and tournament_type in TOURNAMENT_URL_PATTERNS:
+        if tournament_type == "uefa":
+            if not tournament_stage:
+                raise ValueError("Please specify 'tournament_stage' (e.g., 'qualification_round', 'group_stage_week', 'round_of_16', etc.).")
+
+            tournament_patterns = TOURNAMENT_URL_PATTERNS[tournament_type]
+
+            if tournament_stage in tournament_patterns:
+                if not week_number:
+                    raise ValueError(f"Please provide 'week_number' for tournament stage '{tournament_stage}'.")
+
+                url_template = tournament_patterns[tournament_stage]
+                api_request_url = url_template.format(
+                    base_url=base_url,
+                    tournament_id=tournament_id,
+                    season_id=season_id,
+                    week_number=week_number
+                )
+            else:
+                raise ValueError(f"Invalid tournament_stage '{tournament_stage}' for UEFA tournaments.")
+        else:
+            raise ValueError("Invalid tournament_type: Only 'uefa' is supported.")
+    else:
+        if not week_number:
+            raise ValueError("Please provide 'week_number' for default tournament URL.")
+
+        api_request_url = TOURNAMENT_URL_PATTERNS["default"].format(
+            base_url=base_url,
+            tournament_id=tournament_id,
+            season_id=season_id,
+            week_number=week_number
+        )
 
     try:
         webdriver_instance = setup_webdriver()

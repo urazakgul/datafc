@@ -23,7 +23,7 @@ def standings_data(
         tournament_id (int): The unique identifier for the tournament.
         season_id (int): The unique identifier for the season.
         data_source (str): The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
-        element_load_timeout (int): The maximum time (in seconds) to wait for the API response. Defaults to 10.
+        element_load_timeout (int): The maximum time (in seconds) to wait for the API response. Defaults to `10`.
         enable_json_export (bool): If `True`, saves the fetched standings data as a JSON file. Defaults to `False`.
         enable_excel_export (bool): If `True`, saves the fetched standings data as an Excel file. Defaults to `False`.
     """
