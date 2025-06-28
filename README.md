@@ -1,4 +1,4 @@
-# datafc v1.4.0
+# datafc v1.5.0
 
 ## Overview
 
@@ -37,7 +37,7 @@ pip install git+https://github.com/urazakgul/datafc.git
 To install a specific version of `datafc`, use:
 
 ```bash
-pip install datafc==1.4.0
+pip install datafc==1.5.0
 ```
 
 If you already have `datafc` installed and want to upgrade to the latest version, run:
@@ -95,7 +95,10 @@ from datafc.sofascore import (
     substitutions_data,
     goal_networks_data,
     shots_data,
-    standings_data
+    standings_data,
+    team_stats_data,
+    player_stats_data,
+    squad_data
 )
 ```
 
@@ -125,9 +128,21 @@ The `lineups_data` function fetches player lineup details for each match and is 
 
 Without `lineups_data`, these dependent functions will not work as expected.
 
+### `standings_data`: A Foundation for Team and Player-Level Functions
+
 Exception: `standings_data` and `past_matches_data`
 
 Unlike other functions, `standings_data` and `past_matches_data` do not require `match_data` or `lineups_data`. They can be executed independently using only `tournament_id` and `season_id`. Additionally, `past_matches_data` includes an extra field: `week_number`.
+
+However, `standings_data` serves as a critical dependency for the following functions:
+
+* `team_stats_data`
+* `player_stats_data`
+* `squad_data`
+
+These functions rely on team-level metadata (such as `team_id`) provided by `standings_data` to fetch more granular data. Ensure that `standings_data` is successfully executed and includes teams with `category == 'Total'` before calling any of the above functions.
+
+`past_matches_data` also works independently and includes an extra field: `week_number`.
 
 ### Match Data
 
@@ -848,7 +863,181 @@ Dependencies:
 
 * No prior function dependency required.
 
+### Team Statistics Data
+
+#### `team_stats_data`
+
+The `team_stats_data` function fetches detailed statistical data for each team in a given tournament and season, based on the team list provided by `standings_data`.
+
+Note: This function requires the output of `standings_data` and only processes rows where `category == 'Total'`.
+
+Example Usage:
+
+```python
+standings_df = standings_data(
+    tournament_id=52,
+    season_id=63814,
+    data_source="sofascore"
+)
+
+team_stats_df = team_stats_data(
+    standings_df=standings_df,
+    tournament_id=52,
+    season_id=63814,
+    data_source="sofascore",
+    enable_json_export=True,
+    enable_excel_export=True
+)
+
+print(team_stats_df)
+```
+
+Parameters:
+
+* `standings_df` (pd.DataFrame): A DataFrame with metadata on each team, typically returned by standings_data.
+* `tournament_id` (int): The unique identifier for the tournament.
+* `season_id` (int): The unique identifier for the season.
+* `data_source` (str): The data source (`sofavpn` or `sofascore`). Defaults to `"sofascore"`.
+* `element_load_timeout` (int): Maximum time (in seconds) to wait for the API response. Defaults to `10`.
+* `enable_json_export` (bool): If `True`, exports the data as a JSON file. Defaults to `False`.
+* `enable_excel_export` (bool): If `True`, exports the data as an Excel file. Defaults to `False`.
+
+Data Structure:
+
+The returned DataFrame includes the following columns:
+
+* `country`: The country where the tournament is held.
+* `tournament`: The name of the tournament.
+* `team_name`: The name of the team.
+* `team_id`: The unique identifier of the team.
+* `stat`: The name of the statistic.
+* `value`: The value of the statistic.
+
+Dependencies:
+
+* Requires `standings_data` output as `standings_df`.
+
+### Player Statistics Data
+
+#### `player_stats_data`
+
+The `player_stats_data` function fetches top player statistics for each team in the given standings dataset. It processes player-level metrics like goals, assists, duels won, and more.
+
+Note: This function requires the output of `standings_data`, and filters for rows where `category == 'Total'`.
+
+Example Usage:
+
+```python
+standings_df = standings_data(
+    tournament_id=52,
+    season_id=63814,
+    data_source="sofascore"
+)
+
+player_stats_df = player_stats_data(
+    standings_df=standings_df,
+    tournament_id=52,
+    season_id=63814,
+    data_source="sofascore",
+    enable_json_export=True,
+    enable_excel_export=True
+)
+
+print(player_stats_df)
+```
+
+Parameters:
+
+* `standings_df` (pd.DataFrame): A DataFrame with metadata on teams, returned by standings_data.
+* `tournament_id` (int): The unique identifier for the tournament.
+* `season_id` (int): The unique identifier for the season.
+* `data_source` (str): The data source (`sofavpn` or `sofascore`). Defaults to `"sofascore"`.
+* `element_load_timeout` (int): Maximum time (in seconds) to wait for the API response. Defaults to `10`.
+* `enable_json_export` (bool): If `True`, exports the data as a JSON file. Defaults to `False`.
+* `enable_excel_export` (bool): If `True`, exports the data as an Excel file. Defaults to `False`.
+
+Data Structure:
+
+The returned DataFrame includes the following columns:
+
+* `country`: The country where the tournament is held.
+* `tournament`: The name of the tournament.
+* `team_name`: The name of the team.
+* `team_id`: The unique identifier of the team.
+* `player_name`: The name of the player.
+* `player_id`: The unique identifier of the player.
+* `position`: The player’s position.
+* `stat_name`: The name of the statistic.
+* `stat_value`: The value of the statistic.
+
+Dependencies:
+
+* Requires `standings_data` output as `standings_df`.
+
+### Squad Data
+
+#### `squad_data`
+
+The `squad_data` function fetches detailed squad (roster) information for each team listed in the provided standings dataset. It includes player bio data such as age, height, position, market value, and contract info.
+
+Note: This function requires the output of `standings_data`, and only processes rows where `category == 'Total'`.
+
+Example Usage:
+
+```python
+standings_df = standings_data(
+    tournament_id=52,
+    season_id=63814,
+    data_source="sofascore"
+)
+
+squad_df = squad_data(
+    standings_df=standings_df,
+    data_source="sofascore",
+    enable_json_export=True,
+    enable_excel_export=True
+)
+
+print(squad_df)
+```
+
+Parameters:
+
+* `standings_df` (pd.DataFrame): A DataFrame with team metadata, returned by standings_data.
+* `data_source` (str): The data source (`sofavpn` or `sofascore`). Defaults to `"sofascore"`.
+* `element_load_timeout` (int): Maximum time (in seconds) to wait for the API response. Defaults to `10`.
+* `enable_json_export` (bool): If `True`, exports the data as a JSON file. Defaults to `False`.
+* `enable_excel_export` (bool): If `True`, exports the data as an Excel file. Defaults to `False`.
+
+Data Structure:
+
+The returned DataFrame includes the following columns:
+
+* `country`: The country where the tournament is held.
+* `tournament`: The name of the tournament.
+* `team_name`: The name of the team.
+* `team_id`: The unique identifier of the team.
+* `player_name`: The name of the player.
+* `player_id`: The unique identifier of the player.
+* `age`: The date of birth timestamp (UNIX format).
+* `height`: The height of the player.
+* `player_country`: The nationality of the player.
+* `position`: The position of the player.
+* `preferred_foot`: The preferred foot of the player.
+* `contract_until`: The contract end date (UNIX timestamp).
+* `market_value`: The market value of the player.
+* `market_currency`: The currency used for the market value.
+
+Dependencies:
+
+* Requires `standings_data` output as `standings_df`.
+
 ## Changelog
+
+* v1.5.0
+  * Added `team_stats_data` function to retrieve detailed per-team statistics using `standings_data`.
+  * Added `player_stats_data` function to retrieve player-level top stats per team.
+  * Added `squad_data` function to fetch full squad information including bio and market value.
 
 * v1.4.0
   * Added `tournament_type` and `tournament_stage` parameters to `match_data` and `past_matches_data` functions.
