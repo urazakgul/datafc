@@ -1,180 +1,140 @@
-import json
+from typing import TYPE_CHECKING, Optional
 import pandas as pd
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
-from datafc.utils._setup_webdriver import setup_webdriver
+from datafc.utils._client import SofascoreClient
 from datafc.utils._save_files import save_json, save_excel
-from datafc.utils._config import ALLOWED_SOURCES, API_BASE_URLS, TOURNAMENT_URL_PATTERNS
+from datafc.utils._config import API_URLS, WWW_URLS
+from datafc.utils._validate import validate_source, build_tournament_url
+from datafc.exceptions import DataNotAvailableError
+
+if TYPE_CHECKING:
+    from datafc.utils._cache import DiskCache
+
 
 def past_matches_data(
     tournament_id: int,
     season_id: int,
     week_number: int,
-    tournament_type: str = None,
-    tournament_stage: str = None,
+    tournament_type: Optional[str] = None,
+    tournament_stage: Optional[str] = None,
     data_source: str = "sofascore",
-    element_load_timeout: int = 10,
+    rate_limit: float = 2.0,
+    cache: Optional["DiskCache"] = None,
     enable_json_export: bool = False,
-    enable_excel_export: bool = False
+    enable_excel_export: bool = False,
+    output_dir: str = ".",
 ) -> pd.DataFrame:
     """
-    Fetches past match data for a specified tournament, season, and week number.
+    Fetches historical head-to-head match data for teams in the specified round.
 
     Args:
-        tournament_id (int): The unique identifier for the tournament.
-        season_id (int): The unique identifier for the season.
-        week_number (int): The matchweek number within the season.
-        tournament_type (str, optional): The tournament type ('uefa'). If `None`, assumes league format.
-            - 'uefa' is used for UEFA competitions such as 'ucl' (Champions League), 'uel' (Europa League), 'uecl' (Europa Conference League), or 'unl' (Nations League).
-        tournament_stage (str, optional): The specific stage of the tournament (e.g., 'qualification_round', 'group_stage_week', 'round_of_16', etc.).
-        data_source (str): The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
-        element_load_timeout (int): The maximum time (in seconds) to wait for the API response. Defaults to `10`.
-        enable_json_export (bool): If `True`, exports the fetched data as a JSON file. Defaults to `False`.
-        enable_excel_export (bool): If `True`, exports the fetched data as an Excel file. Defaults to `False`.
+        tournament_id: The unique identifier for the tournament.
+        season_id: The unique identifier for the season.
+        week_number: The matchweek number within the season.
+        tournament_type: The tournament type ('uefa'). If None, assumes league format.
+        tournament_stage: The specific stage of the tournament (e.g., 'group_stage_week', 'round_of_16').
+        data_source: The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
+        rate_limit: Maximum requests per second. Defaults to 2.0.
+        cache: Optional DiskCache instance. Cached responses skip the API call.
+        enable_json_export: If True, saves output as JSON. Defaults to False.
+        enable_excel_export: If True, saves output as Excel. Defaults to False.
+
+    Returns:
+        Historical match data for the teams playing in the specified round.
+
+    Raises:
+        InvalidParameterError: If an invalid data_source, tournament_type, or tournament_stage is given.
+        DataNotAvailableError: If no match data is found.
+        APIError: On HTTP errors from the Sofascore API.
     """
-    if data_source not in ALLOWED_SOURCES:
-        raise ValueError(f"Invalid data source: {data_source}. Must be one of {ALLOWED_SOURCES}")
+    validate_source(data_source)
+    round_url = build_tournament_url(
+        base_url=API_URLS[data_source],
+        tournament_id=tournament_id,
+        season_id=season_id,
+        week_number=week_number,
+        tournament_type=tournament_type,
+        tournament_stage=tournament_stage,
+    )
 
-    base_url = API_BASE_URLS[data_source]
+    with SofascoreClient(rate_limit=rate_limit, cache=cache) as client:
+        round_data = client.get(round_url)
 
-    if tournament_type and tournament_type in TOURNAMENT_URL_PATTERNS:
-        if tournament_type == "uefa":
-            if not tournament_stage:
-                raise ValueError("Please specify 'tournament_stage' (e.g., 'qualification_round', 'group_stage_week', 'round_of_16', etc.).")
+        events = round_data.get("events")
+        if not isinstance(events, list) or not events:
+            raise DataNotAvailableError(
+                f"No match data found for tournament_id={tournament_id}, "
+                f"season_id={season_id}, week_number={week_number}."
+            )
 
-            tournament_patterns = TOURNAMENT_URL_PATTERNS[tournament_type]
+        first_event = events[0]
+        fn_country = first_event.get("tournament", {}).get("category", {}).get("name", "")
+        fn_tournament = first_event.get("tournament", {}).get("name", "")
+        fn_season = first_event.get("season", {}).get("year", "")
 
-            if tournament_stage in tournament_patterns:
-                if not week_number:
-                    raise ValueError(f"Please provide 'week_number' for tournament stage '{tournament_stage}'.")
-
-                url_template = tournament_patterns[tournament_stage]
-                api_request_url = url_template.format(
-                    base_url=base_url,
-                    tournament_id=tournament_id,
-                    season_id=season_id,
-                    week_number=week_number
-                )
-            else:
-                raise ValueError(f"Invalid tournament_stage '{tournament_stage}' for UEFA tournaments.")
-        else:
-            raise ValueError("Invalid tournament_type: Only 'uefa' is supported.")
-    else:
-        if not week_number:
-            raise ValueError("Please provide 'week_number' for default tournament URL.")
-
-        api_request_url = TOURNAMENT_URL_PATTERNS["default"].format(
-            base_url=base_url,
-            tournament_id=tournament_id,
-            season_id=season_id,
-            week_number=week_number
-        )
-
-    try:
-        webdriver_instance = setup_webdriver()
-        webdriver_instance.get(api_request_url)
-
-        response_element = WebDriverWait(webdriver_instance, element_load_timeout).until(
-            EC.visibility_of_element_located((By.TAG_NAME, "pre"))
-        )
-        response_text = response_element.text.strip()
-        if not response_text:
-            raise RuntimeError("API response is empty.")
-
-        api_response_data = json.loads(response_text)
-        if "events" not in api_response_data or not isinstance(api_response_data["events"], list):
-            raise ValueError("Invalid API response format: 'events' key is missing or not a list.")
-
-        events_df = pd.DataFrame(api_response_data.get("events", []))
-        if events_df.empty:
-            raise ValueError("No match data found for the specified parameters.")
-
-        fn_country = events_df.iloc[0]["tournament"].get("category", {}).get("name", "")
-        fn_tournament = events_df.iloc[0]["tournament"].get("name", "")
-        fn_season = events_df.iloc[0]["season"].get("year", "")
-        fn_week = week_number
-
-        custom_ids = events_df["customId"].tolist()
-        all_matches_data = []
+        events_df = pd.DataFrame(events)
+        if "customId" not in events_df.columns:
+            raise DataNotAvailableError(
+                f"customId field missing in API response for tournament_id={tournament_id}, "
+                f"season_id={season_id}, week_number={week_number}."
+            )
+        custom_ids = events_df["customId"].dropna().tolist()
+        all_matches = []
 
         for custom_id in custom_ids:
-            h2h_url = f"{API_BASE_URLS[data_source + '2']}/api/v1/event/{custom_id}/h2h/events"
-            webdriver_instance.get(h2h_url)
-            h2h_response_element = WebDriverWait(webdriver_instance, element_load_timeout).until(
-                EC.visibility_of_element_located((By.TAG_NAME, "pre"))
-            )
-            h2h_response_text = h2h_response_element.text.strip()
-            if not h2h_response_text:
+            h2h_url = f"{WWW_URLS[data_source]}/api/v1/event/{custom_id}/h2h/events"
+            h2h_data = client.get(h2h_url)
+
+            h2h_events = h2h_data.get("events")
+            if not isinstance(h2h_events, list):
                 continue
 
-            h2h_data = json.loads(h2h_response_text)
-            if "events" not in h2h_data or not isinstance(h2h_data["events"], list):
-                continue
-
-            for event in h2h_data["events"]:
-                match_info = {
-                    "country": event["tournament"].get("category", {}).get("name", ""),
-                    "tournament": event["tournament"].get("name", ""),
+            for event in h2h_events:
+                all_matches.append({
+                    "country": event.get("tournament", {}).get("category", {}).get("name", ""),
+                    "tournament": event.get("tournament", {}).get("name", ""),
                     "season": event.get("season", {}).get("year", ""),
                     "week": event.get("roundInfo", {}).get("round", ""),
                     "game_id": event.get("id", ""),
-                    "home_team": event["homeTeam"].get("name", ""),
-                    "home_team_id": event["homeTeam"].get("id", ""),
-                    "away_team": event["awayTeam"].get("name", ""),
-                    "away_team_id": event["awayTeam"].get("id", ""),
+                    "home_team": event.get("homeTeam", {}).get("name", ""),
+                    "home_team_id": event.get("homeTeam", {}).get("id", ""),
+                    "away_team": event.get("awayTeam", {}).get("name", ""),
+                    "away_team_id": event.get("awayTeam", {}).get("id", ""),
                     "injury_time_1": event.get("time", {}).get("injuryTime1", ""),
                     "injury_time_2": event.get("time", {}).get("injuryTime2", ""),
                     "start_timestamp": event.get("startTimestamp", ""),
-                    "status": event["status"].get("description", ""),
-                    "home_score_current": event["homeScore"].get("current", ""),
-                    "home_score_display": event["homeScore"].get("display", ""),
-                    "home_score_period1": event["homeScore"].get("period1", ""),
-                    "home_score_period2": event["homeScore"].get("period2", ""),
-                    "home_score_normaltime": event["homeScore"].get("normaltime", ""),
-                    "away_score_current": event["awayScore"].get("current", ""),
-                    "away_score_display": event["awayScore"].get("display", ""),
-                    "away_score_period1": event["awayScore"].get("period1", ""),
-                    "away_score_period2": event["awayScore"].get("period2", ""),
-                    "away_score_normaltime": event["awayScore"].get("normaltime", "")
-                }
-                all_matches_data.append(match_info)
+                    "status": event.get("status", {}).get("description", ""),
+                    "home_score_current": event.get("homeScore", {}).get("current", ""),
+                    "home_score_display": event.get("homeScore", {}).get("display", ""),
+                    "home_score_period1": event.get("homeScore", {}).get("period1", ""),
+                    "home_score_period2": event.get("homeScore", {}).get("period2", ""),
+                    "home_score_normaltime": event.get("homeScore", {}).get("normaltime", ""),
+                    "away_score_current": event.get("awayScore", {}).get("current", ""),
+                    "away_score_display": event.get("awayScore", {}).get("display", ""),
+                    "away_score_period1": event.get("awayScore", {}).get("period1", ""),
+                    "away_score_period2": event.get("awayScore", {}).get("period2", ""),
+                    "away_score_normaltime": event.get("awayScore", {}).get("normaltime", ""),
+                })
 
-        detailed_matches_df = pd.DataFrame(all_matches_data)
+    if not all_matches:
+        raise DataNotAvailableError(
+            f"No H2H match data found for tournament_id={tournament_id}, "
+            f"season_id={season_id}, week_number={week_number}."
+        )
 
-        if enable_json_export or enable_excel_export:
-            if enable_json_export:
-                save_json(
-                    data=detailed_matches_df,
-                    data_source=data_source,
-                    country=fn_country,
-                    tournament=fn_tournament,
-                    season=fn_season,
-                    week_number=fn_week
-                )
+    result_df = pd.DataFrame(all_matches)
 
-            if enable_excel_export:
-                save_excel(
-                    data=detailed_matches_df,
-                    data_source=data_source,
-                    country=fn_country,
-                    tournament=fn_tournament,
-                    season=fn_season,
-                    week_number=fn_week
-                )
+    if enable_json_export or enable_excel_export:
+        kwargs = dict(
+            fn_name="past_matches_data",
+            data_source=data_source,
+            country=fn_country,
+            tournament=fn_tournament,
+            season=fn_season,
+            week_number=week_number,
+        )
+        if enable_json_export:
+            save_json(data=result_df, **kwargs, output_dir=output_dir)
+        if enable_excel_export:
+            save_excel(data=result_df, **kwargs, output_dir=output_dir)
 
-        return detailed_matches_df
-
-    except TimeoutException:
-        raise RuntimeError("Timeout occurred while waiting for the page or API response.")
-    except WebDriverException as e:
-        raise RuntimeError(f"Selenium WebDriver error: {str(e)}")
-    except json.JSONDecodeError:
-        raise RuntimeError("Failed to decode API response as JSON.")
-    except Exception as e:
-        raise RuntimeError(f"Unexpected error while fetching past matches data: {e.__class__.__name__} - {e}")
-
-    finally:
-        if webdriver_instance:
-            webdriver_instance.quit()
+    return result_df

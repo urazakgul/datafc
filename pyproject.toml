@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "datafc"
+version = "2.0.0"
+description = "Fetch, process, and export structured football data."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Uraz Akgül", email = "urazdev@gmail.com" }]
+keywords = ["football", "soccer", "data", "analytics", "sofascore"]
+requires-python = ">=3.8"
+
+dependencies = [
+    "pandas>=1.5",
+    "curl_cffi>=0.7",
+    "openpyxl>=3.0",
+]
+
+[project.optional-dependencies]
+parquet = [
+    "pyarrow>=12.0",
+]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.0",
+    "pandas-stubs>=2.0",
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/urazakgul/datafc"
+Repository = "https://github.com/urazakgul/datafc"
+Issues = "https://github.com/urazakgul/datafc/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["datafc*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
