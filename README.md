@@ -1,4 +1,4 @@
-# datafc v2.1.0
+# datafc v2.2.0
 
 ## Overview
 
@@ -504,15 +504,34 @@ ucl_df = match_data(
     tournament_type="uefa",
     tournament_stage="round_of_16",
 )
+
+# World Cup knockout stages — week_number not needed:
+wc_df = match_data(
+    tournament_id=16,
+    season_id=58210,
+    tournament_type="world_cup",
+    tournament_stage="round_of_16",
+)
+
+# World Cup group stage — week_number required:
+wc_group_df = match_data(
+    tournament_id=16,
+    season_id=58210,
+    week_number=1,
+    tournament_type="world_cup",
+    tournament_stage="group_stage_week",
+)
 ```
 
 Parameters:
 
 - `tournament_id` (int)
 - `season_id` (int)
-- `week_number` (int)
-- `tournament_type` (str, optional): `"uefa"` for UEFA competitions. `None` assumes a domestic league.
-- `tournament_stage` (str, optional): Required when `tournament_type="uefa"`. Options: `preliminary_semifinals`, `preliminary_final`, `qualification_round`, `qualification_playoff`, `group_stage_week`, `playoff_round`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
+- `week_number` (int, optional): Required for league rounds, UEFA stages, and `world_cup` + `group_stage_week`. Not needed for other `world_cup` stages.
+- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup. `None` assumes a domestic league.
+- `tournament_stage` (str, optional): Required when `tournament_type` is set.
+  - `"uefa"` options: `preliminary_semifinals`, `preliminary_final`, `qualification_round`, `qualification_playoff`, `group_stage_week`, `playoff_round`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
+  - `"world_cup"` options: `group_stage_week`, `round_of_32`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
 
 Columns: `country`, `tournament`, `season`, `week`, `game_id`, `home_team`, `home_team_id`, `away_team`, `away_team_id`, `injury_time_1`, `injury_time_2`, `start_timestamp`, `status`, `home_score_current`, `home_score_display`, `home_score_period1`, `home_score_period2`, `home_score_normaltime`, `away_score_current`, `away_score_display`, `away_score_period1`, `away_score_period2`, `away_score_normaltime`.
 
@@ -749,9 +768,9 @@ Parameters:
 
 - `tournament_id` (int)
 - `season_id` (int)
-- `week_number` (int)
-- `tournament_type` (str, optional): `"uefa"` for UEFA competitions.
-- `tournament_stage` (str, optional): Required when `tournament_type="uefa"`. Same options as `match_data`.
+- `week_number` (int, optional): Required for league rounds, UEFA stages, and `world_cup` + `group_stage_week`. Not needed for other `world_cup` stages.
+- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup.
+- `tournament_stage` (str, optional): Required when `tournament_type` is set. Same options as `match_data`.
 
 Same columns as `match_data`.
 
@@ -870,6 +889,13 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 ---
 
 ## Changelog
+
+### v2.2.0
+
+- Added `tournament_type="world_cup"` support to `match_data` and `past_matches_data` for FIFA World Cup competitions. Knockout stage rounds are fixed internally; only `group_stage_week` requires `week_number`.
+- `week_number` is now optional (`None` by default). It is required for league rounds, UEFA stages, and `world_cup` + `group_stage_week`. Omitting it when required raises `InvalidParameterError`.
+
+---
 
 ### v2.1.0
 

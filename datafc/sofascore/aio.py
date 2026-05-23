@@ -77,7 +77,7 @@ logger = logging.getLogger(__name__)
 async def match_data(
     tournament_id: int,
     season_id: int,
-    week_number: int,
+    week_number: Optional[int] = None,
     tournament_type: Optional[str] = None,
     tournament_stage: Optional[str] = None,
     data_source: str = "sofascore",
@@ -1173,7 +1173,7 @@ async def goal_networks_data(
 async def past_matches_data(
     tournament_id: int,
     season_id: int,
-    week_number: int,
+    week_number: Optional[int] = None,
     tournament_type: Optional[str] = None,
     tournament_stage: Optional[str] = None,
     data_source: str = "sofascore",

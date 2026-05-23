@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 def match_data(
     tournament_id: int,
     season_id: int,
-    week_number: int,
+    week_number: Optional[int] = None,
     tournament_type: Optional[str] = None,
     tournament_stage: Optional[str] = None,
     data_source: str = "sofascore",
@@ -31,7 +31,7 @@ def match_data(
         tournament_id: The unique identifier for the tournament.
         season_id: The unique identifier for the season.
         week_number: The matchweek number within the season.
-        tournament_type: The tournament type ('uefa'). If None, assumes league format.
+        tournament_type: The tournament type ('uefa', 'world_cup'). If None, assumes league format.
         tournament_stage: The specific stage of the tournament (e.g., 'group_stage_week', 'round_of_16').
         data_source: The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
         rate_limit: Maximum requests per second. Defaults to 2.0.

@@ -75,7 +75,7 @@ def build_tournament_url(
     base_url: str,
     tournament_id: int,
     season_id: int,
-    week_number: int,
+    week_number: Optional[int],
     tournament_type: Optional[str],
     tournament_stage: Optional[str],
 ) -> str:
@@ -84,13 +84,14 @@ def build_tournament_url(
     if tournament_type is not None:
         validate_tournament_type(tournament_type)
         validate_tournament_stage(tournament_type, tournament_stage)
-        return patterns[tournament_type][tournament_stage].format(
-            base_url=base_url,
-            tournament_id=tournament_id,
-            season_id=season_id,
-            week_number=week_number,
+        template = patterns[tournament_type][tournament_stage]
+    else:
+        template = patterns["default"]
+    if "{week_number}" in template and week_number is None:
+        raise InvalidParameterError(
+            "week_number is required for this tournament_type/tournament_stage combination."
         )
-    return patterns["default"].format(
+    return template.format(
         base_url=base_url,
         tournament_id=tournament_id,
         season_id=season_id,

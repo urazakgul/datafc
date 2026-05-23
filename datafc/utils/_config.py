@@ -40,6 +40,15 @@ TOURNAMENT_URL_PATTERNS = {
         "match_for_3rd_place": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/match-for-3rd-place",
         "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",
     },
+    "world_cup": {
+        "group_stage_week": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}",
+        "round_of_32": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/6/slug/round-of-32",
+        "round_of_16": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/5/slug/round-of-16",
+        "quarterfinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/27/slug/quarterfinals",
+        "semifinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/28/slug/semifinals",
+        "match_for_3rd_place": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/50/slug/match-for-3rd-place",
+        "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/29/slug/final",
+    },
 }
 
 # ---------------------------------------------------------------------------
