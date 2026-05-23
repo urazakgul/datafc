@@ -1,4 +1,4 @@
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 from .sofascore import *
 from .exceptions import (
@@ -31,6 +31,7 @@ __all__ = [
     "player_stats_data",
     "squad_data",
     "upcoming_matches_data",
+    "team_match_history_data",
     "league_player_stats_data",
     # Matchweek
     "match_data",

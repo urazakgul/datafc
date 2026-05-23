@@ -256,6 +256,42 @@ def parse_upcoming_matches_records(data: dict, seen_game_ids: set) -> list:
     return records
 
 
+def parse_team_match_history_records(data: dict, seen_game_ids: set) -> list:
+    """Extract past match records for a team, skipping already-seen game IDs."""
+    records = []
+    for ev in data.get("events", []):
+        game_id = ev.get("id")
+        if not game_id or game_id in seen_game_ids:
+            continue
+        seen_game_ids.add(game_id)
+        home_score = ev.get("homeScore") or {}
+        away_score = ev.get("awayScore") or {}
+        records.append({
+            "country":                (ev.get("tournament") or {}).get("category", {}).get("name"),
+            "tournament":             (ev.get("tournament") or {}).get("name"),
+            "season":                 (ev.get("season") or {}).get("year"),
+            "week":                   (ev.get("roundInfo") or {}).get("round"),
+            "game_id":                game_id,
+            "home_team":              (ev.get("homeTeam") or {}).get("name"),
+            "home_team_id":           (ev.get("homeTeam") or {}).get("id"),
+            "away_team":              (ev.get("awayTeam") or {}).get("name"),
+            "away_team_id":           (ev.get("awayTeam") or {}).get("id"),
+            "home_score_period1":     home_score.get("period1"),
+            "home_score_period2":     home_score.get("period2"),
+            "home_score_normaltime":  home_score.get("normaltime"),
+            "home_score_display":     home_score.get("display"),
+            "home_score_current":     home_score.get("current"),
+            "away_score_period1":     away_score.get("period1"),
+            "away_score_period2":     away_score.get("period2"),
+            "away_score_normaltime":  away_score.get("normaltime"),
+            "away_score_display":     away_score.get("display"),
+            "away_score_current":     away_score.get("current"),
+            "start_timestamp":        ev.get("startTimestamp"),
+            "status":                 (ev.get("status") or {}).get("description"),
+        })
+    return records
+
+
 def parse_incidents_records(
     data: dict, country: str, tournament: str, season, week, game_id
 ) -> list:

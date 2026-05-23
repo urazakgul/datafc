@@ -9,6 +9,7 @@ from .fetch_substitutions_data import substitutions_data
 from .fetch_incidents_data import incidents_data
 from .fetch_match_details_data import match_details_data
 from .fetch_upcoming_matches_data import upcoming_matches_data
+from .fetch_team_match_history_data import team_match_history_data
 from .fetch_match_odds_data import match_odds_data
 from .fetch_momentum_data import momentum_data
 from .fetch_past_matches_data import past_matches_data
@@ -46,6 +47,7 @@ __all__ = [
     "incidents_data",
     "match_details_data",
     "upcoming_matches_data",
+    "team_match_history_data",
     "goal_networks_data",
     "shots_data",
     "past_matches_data",

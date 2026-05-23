@@ -1,8 +1,8 @@
-# datafc v2.0.0
+# datafc v2.1.0
 
 ## Overview
 
-`datafc` fetches, processes, and exports structured football data. It provides **32 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore is currently the only supported data source.
+`datafc` fetches, processes, and exports structured football data. It provides **33 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore is currently the only supported data source.
 
 > **Finding IDs:** `tournament_id` and `season_id` can be discovered two ways:
 > - **From the URL:** navigating to a league page on Sofascore (e.g. `sofascore.com/.../trendyol-super-lig/52#id:63814`) shows `tournament_id=52` and `season_id=63814`.
@@ -34,6 +34,7 @@
 | `player_stats_data` | Top player stats per team (goals, assists, key passes, …) |
 | `squad_data` | Squad roster with age, height, market value, contract expiry |
 | `upcoming_matches_data` | Upcoming fixtures for all teams in the standings |
+| `team_match_history_data` | Full match history for a team across all competitions |
 | `league_player_stats_data` | Wide-format player rankings, sortable by any metric |
 
 ### Matchweek
@@ -396,6 +397,26 @@ df = squad_data(standings_df=standings_df)
 Columns: `country`, `tournament`, `tournament_id`, `season_id`, `team_name`, `team_id`, `player_name`, `player_id`, `age`, `height`, `player_country`, `position`, `preferred_foot`, `contract_until`, `market_value`, `market_currency`.
 
 Dependencies: `standings_data`
+
+---
+
+#### `team_match_history_data`
+
+Fetch the complete match history for a single team across all competitions.
+
+```python
+from datafc import team_match_history_data
+
+df = team_match_history_data(team_id=4748)  # Brazil
+```
+
+The `team_id` can be obtained from `standings_data()`, `squad_data()`, or `search_data()`.
+
+Columns: `country`, `tournament`, `season`, `week`, `game_id`, `home_team`, `home_team_id`, `away_team`, `away_team_id`, `home_score_period1`, `home_score_period2`, `home_score_normaltime`, `home_score_display`, `home_score_current`, `away_score_period1`, `away_score_period2`, `away_score_normaltime`, `away_score_display`, `away_score_current`, `start_timestamp`, `status`.
+
+> **Note:** Results span all competitions in Sofascore's database (league, cup, international). Filter by the `tournament` column to narrow down to a specific competition.
+
+Dependencies: none
 
 ---
 
@@ -850,29 +871,25 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 
 ## Changelog
 
+### v2.1.0
+
+- Added `team_match_history_data`: fetches the complete match history for a single team across all competitions using `team_id` directly (no standings dependency).
+
+---
+
 ### v2.0.0
 
-**Chrome / Selenium removed — no browser required.** datafc now makes direct HTTP requests. Installation is simpler, and fetches are significantly faster than before.
-
-**18 new functions.** `seasons_data`, `season_rounds_data`, `team_data`, `team_transfers_data`, `upcoming_matches_data`, `league_player_stats_data`, `match_details_data`, `match_h2h_data`, `pregame_form_data`, `incidents_data`, `average_positions_data`, `player_data`, `player_transfers_data`, `player_career_stats_data`, `player_national_team_data`, `player_match_log_data`, `referee_stats_data`, `search_data`.
-
-**Async API.** All 32 functions are available in `datafc.aio` for parallel fetching with `asyncio.gather()`, letting you download an entire matchweek's worth of data concurrently.
-
-**Disk caching.** Pass a `DiskCache` instance to any function to avoid re-fetching data you've already downloaded. Cached responses are returned instantly on subsequent calls.
-
-**Automatic rate limiting and retries.** All functions accept a `rate_limit` parameter. Temporary failures (rate limits, server errors) are retried automatically without any extra code on your side.
-
-**New Parquet export.** Use `save_parquet()` on any DataFrame returned by a fetch function to save output as `.parquet`. Requires `pyarrow` (`pip install datafc[parquet]`).
-
-**Heatmap fetch no longer crashes on partial access errors.** `coordinates_data` now skips players that the API refuses to serve and returns data for everyone else. The function only raises an error if no player yields any coordinates at all.
-
-**Exported filenames are human-readable.** JSON, Excel, and Parquet files now use the league name (e.g. `trendyol_superlig_shots_data.json`) instead of raw numeric IDs. Turkish and other non-ASCII characters are transliterated correctly — `Şampiyonlar` becomes `sampiyonlar`, not `ampiyonlar`.
-
-**Valid JSON output.** Exported `.json` files no longer contain invalid `NaN` literals; they use `null` instead, making them compatible with every JSON parser and spreadsheet tool.
-
-**Cleaner numeric columns.** Score fields, ratings, and market values that were previously returned as strings or empty strings are now proper numeric types (`null` when missing, not `""`).
-
-**Clearer errors.** When something goes wrong, the exception type tells you what happened: data not available, invalid parameter, API access error, rate limit hit, or server error.
+- **Chrome / Selenium removed — no browser required.** datafc now makes direct HTTP requests. Installation is simpler, and fetches are significantly faster than before.
+- **18 new functions.** `seasons_data`, `season_rounds_data`, `team_data`, `team_transfers_data`, `upcoming_matches_data`, `league_player_stats_data`, `match_details_data`, `match_h2h_data`, `pregame_form_data`, `incidents_data`, `average_positions_data`, `player_data`, `player_transfers_data`, `player_career_stats_data`, `player_national_team_data`, `player_match_log_data`, `referee_stats_data`, `search_data`.
+- **Async API.** All functions are available in `datafc.aio` for parallel fetching with `asyncio.gather()`, letting you download an entire matchweek's worth of data concurrently.
+- **Disk caching.** Pass a `DiskCache` instance to any function to avoid re-fetching data you've already downloaded. Cached responses are returned instantly on subsequent calls.
+- **Automatic rate limiting and retries.** All functions accept a `rate_limit` parameter. Temporary failures (rate limits, server errors) are retried automatically without any extra code on your side.
+- **New Parquet export.** Use `save_parquet()` on any DataFrame returned by a fetch function to save output as `.parquet`. Requires `pyarrow` (`pip install datafc[parquet]`).
+- **Heatmap fetch no longer crashes on partial access errors.** `coordinates_data` now skips players that the API refuses to serve and returns data for everyone else. The function only raises an error if no player yields any coordinates at all.
+- **Exported filenames are human-readable.** JSON, Excel, and Parquet files now use the league name (e.g. `trendyol_superlig_shots_data.json`) instead of raw numeric IDs. Turkish and other non-ASCII characters are transliterated correctly — `Şampiyonlar` becomes `sampiyonlar`, not `ampiyonlar`.
+- **Valid JSON output.** Exported `.json` files no longer contain invalid `NaN` literals; they use `null` instead, making them compatible with every JSON parser and spreadsheet tool.
+- **Cleaner numeric columns.** Score fields, ratings, and market values that were previously returned as strings or empty strings are now proper numeric types (`null` when missing, not `""`).
+- **Clearer errors.** When something goes wrong, the exception type tells you what happened: data not available, invalid parameter, API access error, rate limit hit, or server error.
 
 ### v1.5.0
 
