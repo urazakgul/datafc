@@ -6,7 +6,7 @@ from datafc.utils._config import API_URLS
 from datafc.utils._validate import validate_source
 from datafc.utils._tournament_info import resolve_tournament_season
 from datafc.sofascore._parsers import parse_standings_rows
-from datafc.exceptions import DataNotAvailableError
+from datafc.exceptions import APIError, DataNotAvailableError
 
 if TYPE_CHECKING:
     from datafc.utils._cache import DiskCache
@@ -51,8 +51,11 @@ def standings_data(
                 f"{API_URLS[data_source]}/api/v1/unique-tournament/{tournament_id}"
                 f"/season/{season_id}/standings/{category}"
             )
-            data = client.get(url)
-            rows.extend(parse_standings_rows(data, category, tournament_id, season_id))
+            try:
+                data = client.get(url)
+                rows.extend(parse_standings_rows(data, category, tournament_id, season_id))
+            except APIError:
+                pass
 
     result_df = pd.DataFrame(rows)
     if result_df.empty:

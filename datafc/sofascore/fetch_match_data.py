@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 import pandas as pd
 from datafc.utils._client import SofascoreClient
 from datafc.utils._save_files import save_json, save_excel
-from datafc.utils._config import API_URLS
+from datafc.utils._config import API_URLS, WORLD_CUP_KNOCKOUT_SLUGS
 from datafc.utils._validate import validate_source, build_tournament_url
 from datafc.sofascore._parsers import parse_match_events
 from datafc.exceptions import DataNotAvailableError
@@ -49,6 +49,28 @@ def match_data(
         APIError: On HTTP errors from the Sofascore API.
     """
     validate_source(data_source)
+
+    if (
+        tournament_type == "world_cup"
+        and tournament_stage in WORLD_CUP_KNOCKOUT_SLUGS
+        and week_number is None
+    ):
+        target_slug = WORLD_CUP_KNOCKOUT_SLUGS[tournament_stage]
+        rounds_url = (
+            f"{API_URLS[data_source]}/api/v1/unique-tournament/{tournament_id}"
+            f"/season/{season_id}/rounds"
+        )
+        with SofascoreClient(rate_limit=rate_limit, cache=cache) as client:
+            rounds_data = client.get(rounds_url)
+        rounds = rounds_data.get("rounds") or rounds_data.get("currentRounds") or []
+        matched = next((r for r in rounds if r.get("slug") == target_slug), None)
+        if matched is None:
+            raise DataNotAvailableError(
+                f"Could not find round with slug '{target_slug}' for "
+                f"tournament_id={tournament_id}, season_id={season_id}."
+            )
+        week_number = matched["round"]
+
     url = build_tournament_url(
         API_URLS[data_source], tournament_id, season_id, week_number,
         tournament_type, tournament_stage,

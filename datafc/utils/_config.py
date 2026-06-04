@@ -42,13 +42,24 @@ TOURNAMENT_URL_PATTERNS = {
     },
     "world_cup": {
         "group_stage_week": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}",
-        "round_of_32": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/6/slug/round-of-32",
-        "round_of_16": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/5/slug/round-of-16",
-        "quarterfinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/27/slug/quarterfinals",
-        "semifinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/28/slug/semifinals",
-        "match_for_3rd_place": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/50/slug/match-for-3rd-place",
-        "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/29/slug/final",
+        "round_of_32": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/round-of-32",
+        "round_of_16": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/round-of-16",
+        "quarterfinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/quarterfinals",
+        "semifinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/semifinals",
+        "match_for_3rd_place": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/match-for-3rd-place",
+        "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",
     },
+}
+
+# Slug used in the API URL for each world_cup knockout stage.
+# Used to auto-resolve the season-specific round number via the /rounds endpoint.
+WORLD_CUP_KNOCKOUT_SLUGS: dict[str, str] = {
+    "round_of_32": "round-of-32",
+    "round_of_16": "round-of-16",
+    "quarterfinals": "quarterfinals",
+    "semifinals": "semifinals",
+    "match_for_3rd_place": "match-for-3rd-place",
+    "final": "final",
 }
 
 # ---------------------------------------------------------------------------

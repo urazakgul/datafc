@@ -35,7 +35,7 @@ import pandas as pd
 
 from datafc.utils._async_client import AsyncSofascoreClient
 from datafc.utils._cache import DiskCache
-from datafc.utils._config import API_URLS, WWW_URLS
+from datafc.utils._config import API_URLS, WWW_URLS, WORLD_CUP_KNOCKOUT_SLUGS
 from datafc.utils._validate import validate_source, validate_df, build_tournament_url
 from datafc.utils._save_files import save_json, save_excel
 from datafc.utils._tournament_info import resolve_tournament_season
@@ -89,6 +89,28 @@ async def match_data(
 ) -> pd.DataFrame:
     """Async version of match_data(). See sync docstring for full parameter docs."""
     validate_source(data_source)
+
+    if (
+        tournament_type == "world_cup"
+        and tournament_stage in WORLD_CUP_KNOCKOUT_SLUGS
+        and week_number is None
+    ):
+        target_slug = WORLD_CUP_KNOCKOUT_SLUGS[tournament_stage]
+        rounds_url = (
+            f"{API_URLS[data_source]}/api/v1/unique-tournament/{tournament_id}"
+            f"/season/{season_id}/rounds"
+        )
+        async with AsyncSofascoreClient(rate_limit=rate_limit, cache=cache) as client:
+            rounds_data = await client.get(rounds_url)
+        rounds = rounds_data.get("rounds") or rounds_data.get("currentRounds") or []
+        matched = next((r for r in rounds if r.get("slug") == target_slug), None)
+        if matched is None:
+            raise DataNotAvailableError(
+                f"Could not find round with slug '{target_slug}' for "
+                f"tournament_id={tournament_id}, season_id={season_id}."
+            )
+        week_number = matched["round"]
+
     url = build_tournament_url(
         API_URLS[data_source], tournament_id, season_id, week_number,
         tournament_type, tournament_stage,
@@ -649,8 +671,11 @@ async def standings_data(
             f"{API_URLS[data_source]}/api/v1/unique-tournament/{tournament_id}"
             f"/season/{season_id}/standings/{category}"
         )
-        data = await client.get(url)
-        return parse_standings_rows(data, category, tournament_id, season_id)
+        try:
+            data = await client.get(url)
+            return parse_standings_rows(data, category, tournament_id, season_id)
+        except APIError:
+            return []
 
     async with AsyncSofascoreClient(rate_limit=rate_limit, cache=cache) as client:
         batches = await asyncio.gather(*[_fetch(client, cat) for cat in ("total", "home", "away")])

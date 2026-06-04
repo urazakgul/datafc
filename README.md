@@ -1,4 +1,4 @@
-# datafc v2.2.0
+# datafc v2.3.0
 
 ## Overview
 
@@ -889,6 +889,13 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 ---
 
 ## Changelog
+
+### v2.3.0
+
+- **Fixed `match_data` for World Cup knockout stages across all seasons.** Round numbers are now resolved automatically from the API instead of being hardcoded, so older seasons work correctly.
+- **Fixed `standings_data` for tournament-format competitions.** Calling this function for World Cup, Euro, or similar tournaments no longer raises an error. Only the available categories are returned.
+
+---
 
 ### v2.2.0
 
