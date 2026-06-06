@@ -1,4 +1,4 @@
-# datafc v2.4.0
+# datafc v2.5.0
 
 ## Overview
 
@@ -791,7 +791,7 @@ squad_df = squad_data(standings_df=standings_df)
 df = player_data(squad_df=squad_df)
 ```
 
-Columns: `player_id`, `player_name`, `date_of_birth`, `age`, `nationality`, `nationality_id`, `height`, `weight`, `preferred_foot`, `jersey_number`, `position`, `market_value`, `market_currency`, `team_id`, `team_name`.
+Columns: `player_id`, `player_name`, `date_of_birth`, `age`, `nationality`, `nationality_id`, `height`, `weight`, `preferred_foot`, `jersey_number`, `position`, `position_detailed`, `market_value`, `market_currency`, `team_id`, `team_name`.
 
 Dependencies: `squad_data`
 
@@ -908,6 +908,12 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 ---
 
 ## What's new
+
+### v2.5.0
+
+- **`player_data` now returns `position_detailed`.** New column containing Sofascore's detailed position list (e.g. `["AM", "MC", "RW"]`) alongside the existing single `position` field.
+
+---
 
 ### v2.4.0
 

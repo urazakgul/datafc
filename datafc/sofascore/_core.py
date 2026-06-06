@@ -493,6 +493,7 @@ def player_profile_record_from_response(data: dict, player_id, player_name) -> O
         "preferred_foot": p.get("preferredFoot"),
         "jersey_number": p.get("jerseyNumber") or p.get("shirtNumber"),
         "position": p.get("position"),
+        "position_detailed": p.get("positionsDetailed"),
         "market_value": mv_raw.get("value"),
         "market_currency": mv_raw.get("currency"),
         "team_id": team.get("id"),
