@@ -2,11 +2,11 @@ import logging
 from typing import TYPE_CHECKING, Optional
 import pandas as pd
 from datafc.utils._client import SofascoreClient
-from datafc.utils._save_files import save_json, save_excel
 from datafc.utils._config import API_URLS
 from datafc.utils._validate import validate_source
 from datafc.utils._helpers import _cast_int_cols
 from datafc.sofascore._parsers import parse_team_match_history_records
+from datafc.sofascore._core import export_df
 from datafc.exceptions import APIError, DataNotAvailableError
 
 if TYPE_CHECKING:
@@ -24,30 +24,7 @@ def team_match_history_data(
     enable_excel_export: bool = False,
     output_dir: str = ".",
 ) -> pd.DataFrame:
-    """
-    Fetches the complete match history for a single team across all competitions.
-
-    Paginates through all available history pages until no further pages exist.
-    The team_id can be obtained from standings_data(), squad_data(), or search_data().
-
-    Args:
-        team_id: The unique Sofascore identifier for the team.
-        data_source: The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
-        rate_limit: Maximum requests per second. Defaults to 2.0.
-        cache: Optional DiskCache instance. Cached responses skip the API call.
-        enable_json_export: If True, saves output as JSON. Defaults to False.
-        enable_excel_export: If True, saves output as Excel. Defaults to False.
-        output_dir: Directory for exported files. Defaults to current directory.
-
-    Returns:
-        Past matches with country, tournament, season, week, home/away team names,
-        IDs, scores, start timestamp and status; sorted by start_timestamp ascending.
-
-    Raises:
-        InvalidParameterError: If an invalid data_source is given.
-        DataNotAvailableError: If no historical match data is found for the team.
-        APIError: On HTTP errors from the Sofascore API.
-    """
+    """Fetches the complete match history for a single team across all competitions."""
     validate_source(data_source)
 
     seen_game_ids: set = set()
@@ -65,10 +42,7 @@ def team_match_history_data(
                     team_id, page, exc,
                 )
                 break
-
-            batch = parse_team_match_history_records(data, seen_game_ids)
-            records.extend(batch)
-
+            records.extend(parse_team_match_history_records(data, seen_game_ids))
             if not data.get("hasNextPage", False):
                 break
             page += 1
@@ -93,16 +67,14 @@ def team_match_history_data(
 
     if enable_json_export or enable_excel_export:
         first = result_df.iloc[0]
-        kwargs = dict(
-            fn_name="team_match_history_data",
-            data_source=data_source,
+        export_df(
+            result_df, fn_name="team_match_history_data", data_source=data_source,
+            output_dir=output_dir,
             country=first.get("country", ""),
             tournament=first.get("tournament", ""),
             season=first.get("season"),
+            include_week=False,
+            enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
         )
-        if enable_json_export:
-            save_json(data=result_df, **kwargs, output_dir=output_dir)
-        if enable_excel_export:
-            save_excel(data=result_df, **kwargs, output_dir=output_dir)
 
     return result_df

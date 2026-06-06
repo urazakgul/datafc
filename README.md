@@ -1,4 +1,4 @@
-# datafc v2.3.0
+# datafc v2.4.0
 
 ## Overview
 
@@ -62,6 +62,7 @@
 | Function | What it returns |
 |---|---|
 | `player_data` | Player profile: age, nationality, height, market value |
+| `player_attribute_overviews_data` | Radar attribute snapshots (attacking, technical, tactical, defending, creativity) per player and position average |
 | `player_transfers_data` | Transfer history per player |
 | `player_career_stats_data` | Season-by-season career stats across all competitions (long format) |
 | `player_national_team_data` | National team appearances, goals, and debut date |
@@ -832,6 +833,24 @@ Dependencies: `squad_data`
 
 ---
 
+#### `player_attribute_overviews_data`
+
+Fetch radar attribute overviews (attacking, technical, tactical, defending, creativity) for each player in a squad, including the position-average baseline and previous-year snapshots.
+
+```python
+from datafc import standings_data, squad_data, player_attribute_overviews_data
+
+standings_df = standings_data(52, 63814)
+squad_df = squad_data(standings_df=standings_df)
+df = player_attribute_overviews_data(squad_df=squad_df)
+```
+
+Columns: `player_id`, `player_name`, `series` (`'player'` or `'average'`), `position`, `year_shift`, `attacking`, `technical`, `tactical`, `defending`, `creativity`.
+
+Dependencies: `squad_data`
+
+---
+
 #### `player_national_team_data`
 
 Fetch national team career statistics (appearances, goals, debut) for each player in a squad.
@@ -888,7 +907,15 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 
 ---
 
-## Changelog
+## What's new
+
+### v2.4.0
+
+- **New function: `player_attribute_overviews_data`** — fetches Sofascore radar attribute snapshots (attacking, technical, tactical, defending, creativity) for each player in a squad. Includes the position-average baseline and previous-year history.
+- **More reliable batch fetches.** `match_h2h_data` and `match_odds_data` no longer stop the whole run when one match returns an error. The bad match is skipped and the rest succeed, matching how other batch functions already behaved.
+- **Fixed `aio.team_stats_data(season=...)`.** The async version now accepts the `season` argument that the sync version always had — previously it raised `TypeError`.
+
+---
 
 ### v2.3.0
 

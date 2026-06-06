@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Optional
 import pandas as pd
 from datafc.utils._client import SofascoreClient
-from datafc.utils._save_files import save_json, save_excel
 from datafc.utils._config import API_URLS
 from datafc.utils._validate import validate_source
 from datafc.utils._tournament_info import resolve_tournament_season
 from datafc.sofascore._parsers import parse_standings_rows
+from datafc.sofascore._core import export_df
 from datafc.exceptions import APIError, DataNotAvailableError
 
 if TYPE_CHECKING:
@@ -22,26 +22,7 @@ def standings_data(
     enable_excel_export: bool = False,
     output_dir: str = ".",
 ) -> pd.DataFrame:
-    """
-    Fetches league standings (Total, Home, Away) for a specific tournament and season.
-
-    Args:
-        tournament_id: The unique identifier for the tournament.
-        season_id: The unique identifier for the season.
-        data_source: The data source ('sofavpn' or 'sofascore'). Defaults to 'sofascore'.
-        rate_limit: Maximum requests per second. Defaults to 2.0.
-        cache: Optional DiskCache instance. Cached responses skip the API call.
-        enable_json_export: If True, saves output as JSON. Defaults to False.
-        enable_excel_export: If True, saves output as Excel. Defaults to False.
-
-    Returns:
-        Standings with position, W/D/L, goals, and points for Total, Home and Away categories.
-
-    Raises:
-        InvalidParameterError: If an invalid data_source is given.
-        DataNotAvailableError: If no standings are returned.
-        APIError: On HTTP errors from the Sofascore API.
-    """
+    """Fetches league standings (Total, Home, Away) for a specific tournament and season."""
     validate_source(data_source)
 
     rows = []
@@ -68,16 +49,14 @@ def standings_data(
             tournament_id, season_id, data_source=data_source, rate_limit=rate_limit
         )
         first = result_df.iloc[0]
-        kwargs = dict(
-            fn_name="standings_data",
-            data_source=data_source,
+        export_df(
+            result_df, fn_name="standings_data", data_source=data_source,
+            output_dir=output_dir,
             country=country or first["country"],
             tournament=tournament_name or first["tournament"],
             season=season_year,
+            include_week=False,
+            enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
         )
-        if enable_json_export:
-            save_json(data=result_df, **kwargs, output_dir=output_dir)
-        if enable_excel_export:
-            save_excel(data=result_df, **kwargs, output_dir=output_dir)
 
     return result_df

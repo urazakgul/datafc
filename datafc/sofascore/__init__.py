@@ -29,6 +29,7 @@ from .fetch_player_match_log_data import player_match_log_data
 from .fetch_referee_stats_data import referee_stats_data
 from .fetch_player_national_team_data import player_national_team_data
 from .fetch_player_data import player_data
+from .fetch_player_attribute_overviews_data import player_attribute_overviews_data
 from .fetch_team_data import team_data
 from .fetch_season_rounds_data import season_rounds_data
 from . import aio
@@ -75,6 +76,7 @@ __all__ = [
     "season_rounds_data",
     # Player profile
     "player_data",
+    "player_attribute_overviews_data",
     # Team profile
     "team_data",
     # Async API

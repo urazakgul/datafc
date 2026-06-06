@@ -1,17 +1,13 @@
-import logging
 from typing import TYPE_CHECKING, Optional
 import pandas as pd
 from datafc.utils._client import SofascoreClient
-from datafc.utils._save_files import save_json, save_excel
-from datafc.utils._config import API_URLS
 from datafc.utils._validate import validate_source, validate_df
 from datafc.sofascore._parsers import parse_match_stats_records
-from datafc.exceptions import APIError, DataNotAvailableError
+from datafc.sofascore._core import iter_per_match_sync, export_df
+from datafc.exceptions import DataNotAvailableError
 
 if TYPE_CHECKING:
     from datafc.utils._cache import DiskCache
-
-logger = logging.getLogger(__name__)
 
 
 def match_stats_data(
@@ -45,36 +41,22 @@ def match_stats_data(
     validate_source(data_source)
     validate_df(match_df, "match_df")
 
-    records = []
     with SofascoreClient(rate_limit=rate_limit, cache=cache) as client:
-        for _, row in match_df.iterrows():
-            country, tournament, season, week, game_id = row[
-                ["country", "tournament", "season", "week", "game_id"]
-            ]
-            try:
-                data = client.get(f"{API_URLS[data_source]}/api/v1/event/{game_id}/statistics")
-            except APIError as exc:
-                logger.warning("Failed to fetch match stats for game_id=%s: %s", game_id, exc)
-                continue
-            records.extend(parse_match_stats_records(data, country, tournament, season, week, game_id))
+        records = iter_per_match_sync(
+            match_df, client,
+            data_source=data_source,
+            endpoint="{base}/api/v1/event/{game_id}/statistics",
+            parser=parse_match_stats_records,
+            log_label="match stats",
+        )
 
     result_df = pd.DataFrame(records)
     if result_df.empty:
         raise DataNotAvailableError("No match statistics data found for the specified parameters.")
 
-    if enable_json_export or enable_excel_export:
-        first = result_df.iloc[0]
-        kwargs = dict(
-            fn_name="match_stats_data",
-            data_source=data_source,
-            country=first["country"],
-            tournament=first["tournament"],
-            season=first["season"],
-            week_number=first["week"],
-        )
-        if enable_json_export:
-            save_json(data=result_df, **kwargs, output_dir=output_dir)
-        if enable_excel_export:
-            save_excel(data=result_df, **kwargs, output_dir=output_dir)
-
+    export_df(
+        result_df, fn_name="match_stats_data", data_source=data_source,
+        output_dir=output_dir,
+        enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
+    )
     return result_df
