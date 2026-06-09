@@ -1,12 +1,23 @@
-# datafc v2.5.0
+# datafc v2.6.0
 
 ## Overview
 
-`datafc` fetches, processes, and exports structured football data. It provides **33 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore is currently the only supported data source.
+`datafc` fetches, processes, and exports structured football data. It provides **35 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore is currently the only supported data source.
 
 > **Finding IDs:** `tournament_id` and `season_id` can be discovered two ways:
 > - **From the URL:** navigating to a league page on Sofascore (e.g. `sofascore.com/.../trendyol-super-lig/52#id:63814`) shows `tournament_id=52` and `season_id=63814`.
 > - **Programmatically:** use `search_data("super lig", entity_type="tournament")` to find the tournament ID, then `seasons_data(tournament_id)` to list all available seasons.
+
+---
+
+<p align="center">
+  If you find <strong>datafc</strong> useful, consider supporting the project ☕<br><br>
+  <a href="https://buymeacoffee.com/urazdev">
+    <img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-urazdev-%23FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black" alt="Buy Me A Coffee">
+  </a>
+</p>
+
+---
 
 ## What Data Can You Access?
 
@@ -43,6 +54,7 @@
 |---|---|
 | `match_data` | Fixtures for a matchweek: score, status, home/away teams |
 | `match_details_data` | Referee info (name, cards, games) and venue details per match |
+| `formations_data` | Home and away formation for each match |
 | `match_stats_data` | Aggregate team stats per match (possession, shots, fouls, …) |
 | `match_odds_data` | Pre-match 1/X/2 betting odds |
 | `match_h2h_data` | All-time H2H record between the two teams |
@@ -554,6 +566,22 @@ Dependencies: `match_data`
 
 ---
 
+#### `formations_data`
+
+Fetch home and away formation for each match.
+
+```python
+from datafc import formations_data
+
+df = formations_data(match_df=match_df)
+```
+
+Columns: `country`, `tournament`, `season`, `week`, `game_id`, `team` (`home` / `away`), `formation`.
+
+Dependencies: `match_data`
+
+---
+
 #### `match_stats_data`
 
 Fetch aggregate team statistics (possession, shots, passes, etc.) for each match.
@@ -908,6 +936,12 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 ---
 
 ## What's new
+
+### v2.6.0
+
+- **New function: `formations_data`** — fetches home and away formation for each match. Returns two rows per match (`team`: `home` / `away`) with the formation string (e.g. `4-3-3`).
+
+---
 
 ### v2.5.0
 

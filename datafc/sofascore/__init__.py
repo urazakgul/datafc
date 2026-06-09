@@ -3,6 +3,7 @@ from .fetch_match_stats_data import match_stats_data
 from .fetch_standings_data import standings_data
 from .fetch_shots_data import shots_data
 from .fetch_goal_networks_data import goal_networks_data
+from .fetch_formations_data import formations_data
 from .fetch_lineups_data import lineups_data
 from .fetch_coordinates_data import coordinates_data
 from .fetch_substitutions_data import substitutions_data
@@ -47,6 +48,7 @@ __all__ = [
     "substitutions_data",
     "incidents_data",
     "match_details_data",
+    "formations_data",
     "upcoming_matches_data",
     "team_match_history_data",
     "goal_networks_data",

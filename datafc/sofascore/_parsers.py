@@ -162,6 +162,24 @@ def parse_momentum_records(
     ]
 
 
+def parse_formations_records(
+    data: dict, country: str, tournament: str, season, week, game_id
+) -> list:
+    """Extract home and away formation records from a single event's lineups response."""
+    records = []
+    for team_key in ("home", "away"):
+        team_data = data.get(team_key, {})
+        formation = team_data.get("formation")
+        if formation is not None:
+            records.append({
+                "country": country, "tournament": tournament,
+                "season": season, "week": week, "game_id": game_id,
+                "team": team_key,
+                "formation": formation,
+            })
+    return records
+
+
 def parse_lineups_records(
     data: dict, country: str, tournament: str, season, week, game_id
 ) -> list:

@@ -57,6 +57,7 @@ from datafc.sofascore._core import (
 )
 from datafc.sofascore._parsers import (
     parse_average_positions_records,
+    parse_formations_records,
     parse_incidents_records,
     parse_league_player_stats_records,
     parse_lineups_records,
@@ -231,6 +232,28 @@ async def momentum_data(
         log_label="momentum",
         fn_name="momentum_data",
         error_msg="No momentum data found.",
+        enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
+        output_dir=output_dir,
+    )
+
+
+async def formations_data(
+    match_df: pd.DataFrame,
+    data_source: str = "sofascore",
+    rate_limit: float = 2.0,
+    cache: Optional[DiskCache] = None,
+    enable_json_export: bool = False,
+    enable_excel_export: bool = False,
+    output_dir: str = ".",
+) -> pd.DataFrame:
+    """Async version of formations_data()."""
+    return await _per_match_simple(
+        match_df, data_source, rate_limit, cache,
+        endpoint="{base}/api/v1/event/{game_id}/lineups",
+        parser=parse_formations_records,
+        log_label="formations",
+        fn_name="formations_data",
+        error_msg="No formation data found.",
         enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
         output_dir=output_dir,
     )
