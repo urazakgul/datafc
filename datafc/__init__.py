@@ -1,6 +1,8 @@
-__version__ = "2.6.0"
+__version__ = "2.7.0"
 
 from .sofascore import *
+from . import clubelo
+from . import eloratings
 from .exceptions import (
     DataFCError,
     InvalidParameterError,
@@ -61,6 +63,10 @@ __all__ = [
     "referee_stats_data",
     # Async API
     "aio",
+    # ClubElo subpackage
+    "clubelo",
+    # EloRatings subpackage
+    "eloratings",
     # Exceptions
     "DataFCError",
     "InvalidParameterError",

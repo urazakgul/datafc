@@ -1,3 +1,5 @@
+from typing import Optional
+
 ALLOWED_SOURCES = {"sofavpn", "sofascore"}
 
 SOFASCORE_HEADERS = {
@@ -24,6 +26,66 @@ WWW_URLS = {
     "sofascore": "https://www.sofascore.com",
     "sofavpn": "https://www.sofavpn.com",
 }
+
+CLUBELO_URL = "https://api.clubelo.com"
+
+_runtime_clubelo_url: Optional[str] = None
+
+
+def get_clubelo_base_url() -> str:
+    """Return the active ClubElo base URL (runtime override takes precedence)."""
+    return _runtime_clubelo_url if _runtime_clubelo_url else CLUBELO_URL
+
+
+def set_clubelo_base_url(url: str) -> None:
+    """Override the ClubElo base URL at runtime.
+
+    Useful when the default ``https://api.clubelo.com`` is unreachable (corporate
+    firewalls blocking port 443, regional restrictions, etc.) but the same host
+    is reachable over plain HTTP, or when routing through a mirror/proxy.
+
+    Args:
+        url: Base URL without a trailing slash, e.g. ``"http://api.clubelo.com"``.
+    """
+    global _runtime_clubelo_url
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("ClubElo base URL must be a non-empty string.")
+    _runtime_clubelo_url = url.rstrip("/")
+
+
+def reset_clubelo_base_url() -> None:
+    """Restore the built-in default ClubElo base URL."""
+    global _runtime_clubelo_url
+    _runtime_clubelo_url = None
+
+
+ELORATINGS_URL = "https://www.eloratings.net"
+
+_runtime_eloratings_url: Optional[str] = None
+
+
+def get_eloratings_base_url() -> str:
+    """Return the active eloratings.net base URL (runtime override takes precedence)."""
+    return _runtime_eloratings_url if _runtime_eloratings_url else ELORATINGS_URL
+
+
+def set_eloratings_base_url(url: str) -> None:
+    """Override the eloratings.net base URL at runtime.
+
+    Useful when the default ``https://www.eloratings.net`` is unreachable
+    (corporate firewalls, regional restrictions) but the same host is
+    reachable over plain HTTP, or when routing through a mirror.
+    """
+    global _runtime_eloratings_url
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("eloratings.net base URL must be a non-empty string.")
+    _runtime_eloratings_url = url.rstrip("/")
+
+
+def reset_eloratings_base_url() -> None:
+    """Restore the built-in default eloratings.net base URL."""
+    global _runtime_eloratings_url
+    _runtime_eloratings_url = None
 
 TOURNAMENT_URL_PATTERNS = {
     "default": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}",

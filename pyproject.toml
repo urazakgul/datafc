@@ -4,12 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datafc"
-version = "2.6.0"
+version = "2.7.0"
 description = "Fetch, process, and export structured football data."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Uraz Akgül", email = "urazdev@gmail.com" }]
-keywords = ["football", "soccer", "data", "analytics", "sofascore"]
+keywords = ["football", "soccer", "data", "analytics", "sofascore", "clubelo", "eloratings", "elo"]
 requires-python = ">=3.8"
 
 dependencies = [

@@ -1,8 +1,8 @@
-# datafc v2.6.0
+# datafc v2.7.0
 
 ## Overview
 
-`datafc` fetches, processes, and exports structured football data. It provides **35 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore is currently the only supported data source.
+`datafc` fetches, processes, and exports structured football data. It provides **45 functions** covering tournament metadata, standings, squad rosters, match fixtures, shots, lineups, player heatmaps, odds, club & national-team Elo ratings, and more — all returning clean `pandas` DataFrames ready for analysis. Sofascore, ClubElo, and eloratings.net are the supported data sources.
 
 > **Finding IDs:** `tournament_id` and `season_id` can be discovered two ways:
 > - **From the URL:** navigating to a league page on Sofascore (e.g. `sofascore.com/.../trendyol-super-lig/52#id:63814`) shows `tournament_id=52` and `season_id=63814`.
@@ -85,6 +85,26 @@
 | Function | What it returns |
 |---|---|
 | `referee_stats_data` | Career stats for a referee: games, cards, and per-game averages |
+
+### ClubElo
+
+| Function | What it returns |
+|---|---|
+| `clubelo.daily_ranking_data` | Full ClubElo ranking for a given calendar day (since 1939) |
+| `clubelo.club_history_data` | Complete Elo rating history for a single club |
+| `clubelo.fixtures_data` | Per-goal-difference and exact-result probabilities for upcoming matches |
+
+### EloRatings (national teams)
+
+| Function | What it returns |
+|---|---|
+| `eloratings.world_ranking_data` | Current global Elo ranking for all national teams |
+| `eloratings.country_matches_data` | Complete international match history for a national team |
+| `eloratings.country_codes_data` | Country code → English country name reference |
+| `eloratings.tournament_codes_data` | Tournament code → English tournament name reference |
+| `eloratings.tournament_editions_data` | Every tournament edition with start/end dates and page slug |
+| `eloratings.tournament_groups_data` | Specific tournament code → broader group code (e.g. all WC qualifier variants → `WQT`) |
+| `eloratings.teams_data` | Legacy/historical country code → ISO code mapping |
 
 > **Coverage:** Any league and season available on Sofascore. For Turkey Super Lig, every season from 1980/81 to the present is accessible.
 
@@ -935,7 +955,99 @@ Columns: `referee_id`, `referee_name`, `tournament_id`, `tournament_name`, `stat
 
 ---
 
+### ClubElo
+
+ClubElo (<https://clubelo.com>) maintains daily Elo ratings for European clubs going back to 1939. Three functions wrap the public API; all return `pandas` DataFrames.
+
+```python
+from datafc import clubelo
+
+# Full ranking on a given day
+df = clubelo.daily_ranking_data("2026-06-10")
+
+# A single club's full Elo history (use the spelling shown in daily_ranking_data)
+hist = clubelo.club_history_data("Man City")
+
+# Upcoming matches with per-goal-difference and exact-result probabilities
+fix = clubelo.fixtures_data()
+```
+
+Common parameters: `rate_limit` (default `2.0` req/s) and `cache` (any `DiskCache` instance, shared with the Sofascore functions).
+
+> **Notes:**
+> - Club names must match ClubElo's spelling exactly (e.g. `"Man City"`, `"Real Madrid"`, `"Paris SG"`). Run `daily_ranking_data` first and check the `club` column.
+> - Values before 1960 are considered provisional by ClubElo.
+> - Dates accept either `"YYYY-MM-DD"` strings or `datetime.date` objects.
+
+If the default `https://api.clubelo.com` is unreachable from your network (some corporate firewalls block port 443 to this host while leaving port 80 open), override the base URL once at startup:
+
+```python
+from datafc import clubelo
+clubelo.set_clubelo_base_url("http://api.clubelo.com")
+```
+
+`clubelo.reset_clubelo_base_url()` restores the default.
+
+---
+
+### EloRatings (national teams)
+
+[eloratings.net](https://www.eloratings.net) maintains daily Elo ratings for national teams going back to 1872. Seven functions wrap the site's underlying `.tsv` data files; all return `pandas` DataFrames.
+
+```python
+from datafc import eloratings
+
+# Current global ranking of all national teams (30 columns)
+df = eloratings.world_ranking_data()
+
+# Full match history for a single national team
+matches = eloratings.country_matches_data("Spain")
+
+# Code reference tables (handy for joining onto the above)
+countries = eloratings.country_codes_data()         # country_code → country_name
+tournaments = eloratings.tournament_codes_data()    # tournament_code → tournament_name
+groups = eloratings.tournament_groups_data()        # specific code → group code (long format)
+editions = eloratings.tournament_editions_data()    # every tournament edition + dates + slug
+
+# Legacy/historical country code → ISO code mapping
+teams = eloratings.teams_data()
+
+# Example: enrich Spain's matches with full tournament names
+spain = (
+    eloratings.country_matches_data("Spain")
+    .merge(tournaments, left_on="tournament", right_on="tournament_code", how="left")
+)
+
+# Example: every World Cup final tournament (filter editions on the WC group)
+wc_finals = editions[(editions["code"] == "WC") & editions["start_date"].notna()]
+```
+
+Common parameters: `rate_limit` (default `2.0` req/s) and `cache` (same `DiskCache` instance as Sofascore/ClubElo).
+
+> **Column names are verified against the site's JavaScript source.**
+> eloratings.net does not publish a documented API; the `.tsv` files have no header row. Column names in `world_ranking_data` are derived from index→field assignments in `scripts/ratings.js`; the remaining files are cross-checked against the live site's display. The ``WORLD_COLUMNS`` / ``COUNTRY_MATCH_COLUMNS`` lists in `datafc/eloratings/_parsers.py` document each position. If the site changes its layout, columns may be silently mis-labelled — please open an issue if you spot a discrepancy.
+
+> **Country argument is a page slug, not an ISO code.**
+> `country_matches_data("Spain")` calls `https://www.eloratings.net/Spain.tsv`. Use the same capitalisation and spelling shown in the URL of the country page on eloratings.net (e.g. `"Czech_Republic"`, `"United_States"`).
+
+Override the base URL the same way as ClubElo if needed:
+
+```python
+from datafc import eloratings
+eloratings.set_eloratings_base_url("http://www.eloratings.net")
+```
+
+---
+
 ## What's new
+
+### v2.7.0
+
+- **Club Elo ratings via ClubElo.** Pull daily Elo rankings of European clubs (going back to 1939), a single club's full rating history, and probability-based predictions for upcoming matches — all as `pandas` DataFrames. Three functions under `datafc.clubelo`: `daily_ranking_data`, `club_history_data`, `fixtures_data`.
+- **National-team Elo ratings via eloratings.net.** Pull the current global ranking of every national team, a country's full international match history (back to 1872), and the site's reference tables for resolving the two-letter country codes and tournament codes into full names. Seven functions under `datafc.eloratings`, including `world_ranking_data`, `country_matches_data`, `country_codes_data`, and `tournament_codes_data`.
+- **Shared caching across all sources.** ClubElo and eloratings.net responses use the same `DiskCache` you already pass to the Sofascore functions, so a single cache directory keeps every fetch persistent across sessions.
+
+---
 
 ### v2.6.0
 
