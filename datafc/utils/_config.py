@@ -111,6 +111,11 @@ TOURNAMENT_URL_PATTERNS = {
         "match_for_3rd_place": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/match-for-3rd-place",
         "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",
     },
+    "league_playoff": {
+        "quarterfinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/quarterfinals",
+        "semifinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/semifinals",
+        "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",
+    },
 }
 
 # Slug used in the API URL for each world_cup knockout stage.

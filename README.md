@@ -1,4 +1,4 @@
-# datafc v2.7.0
+# datafc v2.7.1
 
 ## Overview
 
@@ -554,17 +554,28 @@ wc_group_df = match_data(
     tournament_type="world_cup",
     tournament_stage="group_stage_week",
 )
+
+# Domestic league promotion playoff (e.g. TFF 1. Lig, EFL Championship):
+# use season_rounds_data to discover the round_number for each stage.
+playoff_df = match_data(
+    tournament_id=98,
+    season_id=<season_id>,
+    week_number=<round_number>,
+    tournament_type="league_playoff",
+    tournament_stage="final",
+)
 ```
 
 Parameters:
 
 - `tournament_id` (int)
 - `season_id` (int)
-- `week_number` (int, optional): Required for league rounds, UEFA stages, and `world_cup` + `group_stage_week`. Not needed for other `world_cup` stages.
-- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup. `None` assumes a domestic league.
+- `week_number` (int, optional): Required for league rounds, UEFA stages, `world_cup` + `group_stage_week`, and all `league_playoff` stages. Not needed for other `world_cup` stages.
+- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup, `"league_playoff"` for domestic promotion playoffs. `None` assumes a domestic league.
 - `tournament_stage` (str, optional): Required when `tournament_type` is set.
   - `"uefa"` options: `preliminary_semifinals`, `preliminary_final`, `qualification_round`, `qualification_playoff`, `group_stage_week`, `playoff_round`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
   - `"world_cup"` options: `group_stage_week`, `round_of_32`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
+  - `"league_playoff"` options: `quarterfinals`, `semifinals`, `final`.
 
 Columns: `country`, `tournament`, `season`, `week`, `game_id`, `home_team`, `home_team_id`, `away_team`, `away_team_id`, `injury_time_1`, `injury_time_2`, `start_timestamp`, `status`, `home_score_current`, `home_score_display`, `home_score_period1`, `home_score_period2`, `home_score_normaltime`, `away_score_current`, `away_score_display`, `away_score_period1`, `away_score_period2`, `away_score_normaltime`.
 
@@ -817,8 +828,8 @@ Parameters:
 
 - `tournament_id` (int)
 - `season_id` (int)
-- `week_number` (int, optional): Required for league rounds, UEFA stages, and `world_cup` + `group_stage_week`. Not needed for other `world_cup` stages.
-- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup.
+- `week_number` (int, optional): Required for league rounds, UEFA stages, `world_cup` + `group_stage_week`, and all `league_playoff` stages. Not needed for other `world_cup` stages.
+- `tournament_type` (str, optional): `"uefa"` for UEFA competitions, `"world_cup"` for FIFA World Cup, `"league_playoff"` for domestic promotion playoffs.
 - `tournament_stage` (str, optional): Required when `tournament_type` is set. Same options as `match_data`.
 
 Same columns as `match_data`.
@@ -1040,6 +1051,12 @@ eloratings.set_eloratings_base_url("http://www.eloratings.net")
 ---
 
 ## What's new
+
+### v2.7.1
+
+- **New `tournament_type="league_playoff"`** for `match_data` and `past_matches_data`. Covers domestic promotion playoffs (e.g. TFF 1. Lig, EFL Championship) with `quarterfinals`, `semifinals`, and `final` stages. Use `season_rounds_data` to discover the `week_number` for each stage.
+
+---
 
 ### v2.7.0
 
