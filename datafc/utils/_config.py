@@ -112,6 +112,7 @@ TOURNAMENT_URL_PATTERNS = {
         "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",
     },
     "league_playoff": {
+        "qualification_round": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/qualification-round-{week_number}",
         "quarterfinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/quarterfinals",
         "semifinals": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/semifinals",
         "final": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}/slug/final",

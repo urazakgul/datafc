@@ -1,4 +1,4 @@
-# datafc v2.7.1
+# datafc v2.7.2
 
 ## Overview
 
@@ -575,7 +575,7 @@ Parameters:
 - `tournament_stage` (str, optional): Required when `tournament_type` is set.
   - `"uefa"` options: `preliminary_semifinals`, `preliminary_final`, `qualification_round`, `qualification_playoff`, `group_stage_week`, `playoff_round`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
   - `"world_cup"` options: `group_stage_week`, `round_of_32`, `round_of_16`, `quarterfinals`, `semifinals`, `match_for_3rd_place`, `final`.
-  - `"league_playoff"` options: `quarterfinals`, `semifinals`, `final`.
+  - `"league_playoff"` options: `qualification_round`, `quarterfinals`, `semifinals`, `final`. For `qualification_round`, `week_number` doubles as the round number in the slug (`1` → `qualification-round-1`, `2` → `qualification-round-2`).
 
 Columns: `country`, `tournament`, `season`, `week`, `game_id`, `home_team`, `home_team_id`, `away_team`, `away_team_id`, `injury_time_1`, `injury_time_2`, `start_timestamp`, `status`, `home_score_current`, `home_score_display`, `home_score_period1`, `home_score_period2`, `home_score_normaltime`, `away_score_current`, `away_score_display`, `away_score_period1`, `away_score_period2`, `away_score_normaltime`.
 
@@ -1051,6 +1051,12 @@ eloratings.set_eloratings_base_url("http://www.eloratings.net")
 ---
 
 ## What's new
+
+### v2.7.2
+
+- **`league_playoff` gains `qualification_round`.** `match_data` and `past_matches_data` now cover the early elimination rounds of domestic promotion playoffs (e.g. TFF 1. Lig 1. and 2. eleme turu). `week_number` doubles as the round number in the slug (`1` → `qualification-round-1`, `2` → `qualification-round-2`), matching the existing UEFA `qualification_round` convention.
+
+---
 
 ### v2.7.1
 
