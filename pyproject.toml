@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "datafc"
-version = "2.7.2"
+version = "2.8.0"
 description = "Fetch, process, and export structured football data."
 readme = "README.md"
 license = { text = "MIT" }
@@ -16,6 +16,7 @@ dependencies = [
     "pandas>=1.5",
     "curl_cffi>=0.7",
     "openpyxl>=3.0",
+    "beautifulsoup4>=4.11",
 ]
 
 [project.optional-dependencies]

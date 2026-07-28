@@ -1,8 +1,9 @@
-__version__ = "2.7.2"
+__version__ = "2.8.0"
 
 from .sofascore import *
 from . import clubelo
 from . import eloratings
+from . import tff
 from .exceptions import (
     DataFCError,
     InvalidParameterError,
@@ -67,6 +68,8 @@ __all__ = [
     "clubelo",
     # EloRatings subpackage
     "eloratings",
+    # TFF subpackage
+    "tff",
     # Exceptions
     "DataFCError",
     "InvalidParameterError",

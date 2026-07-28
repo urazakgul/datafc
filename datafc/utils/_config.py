@@ -87,6 +87,31 @@ def reset_eloratings_base_url() -> None:
     global _runtime_eloratings_url
     _runtime_eloratings_url = None
 
+
+TFF_URL = "https://www.tff.org"
+
+_runtime_tff_url: Optional[str] = None
+
+
+def get_tff_base_url() -> str:
+    """Return the active tff.org base URL (runtime override takes precedence)."""
+    return _runtime_tff_url if _runtime_tff_url else TFF_URL
+
+
+def set_tff_base_url(url: str) -> None:
+    """Override the tff.org base URL at runtime (mirror or plain-HTTP fallback)."""
+    global _runtime_tff_url
+    if not isinstance(url, str) or not url.strip():
+        raise ValueError("tff.org base URL must be a non-empty string.")
+    _runtime_tff_url = url.rstrip("/")
+
+
+def reset_tff_base_url() -> None:
+    """Restore the built-in default tff.org base URL."""
+    global _runtime_tff_url
+    _runtime_tff_url = None
+
+
 TOURNAMENT_URL_PATTERNS = {
     "default": "{base_url}/api/v1/unique-tournament/{tournament_id}/season/{season_id}/events/round/{week_number}",
     "uefa": {
