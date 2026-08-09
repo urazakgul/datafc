@@ -6,6 +6,7 @@ from .fetch_goal_networks_data import goal_networks_data
 from .fetch_formations_data import formations_data
 from .fetch_lineups_data import lineups_data
 from .fetch_coordinates_data import coordinates_data
+from .fetch_rating_breakdown_data import rating_breakdown_data
 from .fetch_substitutions_data import substitutions_data
 from .fetch_incidents_data import incidents_data
 from .fetch_match_details_data import match_details_data
@@ -59,6 +60,7 @@ __all__ = [
     # Player-level
     "lineups_data",
     "coordinates_data",
+    "rating_breakdown_data",
     "player_career_stats_data",
     "player_transfers_data",
     # League / season-level

@@ -1,4 +1,4 @@
-__version__ = "2.8.0"
+__version__ = "2.9.0"
 
 from .sofascore import *
 from . import clubelo
@@ -51,6 +51,7 @@ __all__ = [
     "incidents_data",
     "average_positions_data",
     "coordinates_data",
+    "rating_breakdown_data",
     "goal_networks_data",
     "past_matches_data",
     # Player

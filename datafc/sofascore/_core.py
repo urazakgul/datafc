@@ -815,3 +815,45 @@ def heatmap_records(data: dict, row: pd.Series) -> list:
         for point in data.get("heatmap", [])
         if isinstance(point, dict) and "x" in point and "y" in point
     ]
+
+
+_RATING_BREAKDOWN_CATEGORIES = ("passes", "dribbles", "defensive", "ball-carries")
+
+
+def rating_breakdown_records(data: dict, row: pd.Series) -> list:
+    """rating_breakdown_data per-player action parser.
+
+    Flattens the four action buckets returned by the endpoint
+    (``passes``, ``dribbles``, ``defensive``, ``ball-carries``) into one row
+    per action, carrying start/end coordinates and outcome flags.
+    """
+    out = []
+    for category in _RATING_BREAKDOWN_CATEGORIES:
+        actions = data.get(category) or []
+        for action in actions:
+            if not isinstance(action, dict):
+                continue
+            player_coords = action.get("playerCoordinates") or {}
+            pass_end = action.get("passEndCoordinates") or {}
+            out.append({
+                "country": row["country"],
+                "tournament": row["tournament"],
+                "season": row["season"],
+                "week": row["week"],
+                "game_id": row["game_id"],
+                "team": row["team"],
+                "player_id": row["player_id"],
+                "player_name": row["player_name"],
+                "category": category,
+                "event_action_type": action.get("eventActionType"),
+                "is_home": action.get("isHome"),
+                "outcome": action.get("outcome"),
+                "keypass": action.get("keypass"),
+                "is_assist": action.get("isAssist"),
+                "is_long_ball": action.get("isLongBall"),
+                "player_x": player_coords.get("x"),
+                "player_y": player_coords.get("y"),
+                "pass_end_x": pass_end.get("x"),
+                "pass_end_y": pass_end.get("y"),
+            })
+    return out
