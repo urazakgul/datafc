@@ -22,7 +22,7 @@ from urllib.parse import parse_qs, urlparse
 import pandas as pd
 from bs4 import BeautifulSoup, Tag
 
-from datafc.exceptions import DataNotAvailableError
+from datafc.exceptions import DataNotAvailableError, InvalidParameterError
 
 
 _POSITION_PREFIX_RE = re.compile(r"^\s*(\d+)\.\s*(.+?)\s*$")
@@ -92,6 +92,7 @@ def parse_fixtures(html: str, *, page_id: int, week: int) -> pd.DataFrame:
     """
     soup = _soup(html)
     rows: List[Dict[str, Any]] = []
+    row_modules: List[Optional[Tag]] = []
 
     for tr in soup.select("tr.haftaninMaclariTr"):
         date_cell = tr.select_one("td.haftaninMaclariTarih")
@@ -136,16 +137,26 @@ def parse_fixtures(html: str, *, page_id: int, week: int) -> pd.DataFrame:
             "home_score": home_score,
             "away_score": away_score,
         })
+        row_modules.append(tr.find_parent("div", class_="haftaninMaclariModul"))
 
     # Fallback to compact layout (2. Lig / 3. Lig grouped pages).
     if not rows:
         rows.extend(_parse_fixtures_compact(soup, page_id=page_id, week=week))
 
+    kupa_rows = _parse_fixtures_kupa(
+        soup, page_id=page_id, week=week, staged_only=bool(rows)
+    )
+    if kupa_rows and rows:
+        for row, module in zip(rows, row_modules):
+            if module is not None:
+                row["group"] = _table_title(module)
+    rows.extend(kupa_rows)
+
     if not rows:
         raise DataNotAvailableError(
             f"No fixtures found for pageID={page_id}, hafta={week}."
         )
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows).drop_duplicates().reset_index(drop=True)
 
 
 _WEEK_HEADER_RE = re.compile(r"^\s*(\d+)\s*\.\s*Hafta\s*$", re.IGNORECASE)
@@ -209,6 +220,121 @@ def _parse_fixtures_compact(soup: BeautifulSoup, *, page_id: int, week: int) -> 
                     "away_score": None,
                 })
     return rows
+
+
+_KUPA_GROUP_RE = re.compile(r"«\s*(.+?)\s*\(\s*\d+\s*\.\s*hafta\s*\)\s*»", re.IGNORECASE)
+
+
+_STAGED_TITLE_RE = re.compile(r"Klasman|Kademe", re.IGNORECASE)
+
+
+def _parse_fixtures_kupa(
+    soup: BeautifulSoup, *, page_id: int, week: int, staged_only: bool = False
+) -> List[Dict[str, Any]]:
+    """Parse the ``kupaMaclari`` layout (``« 01 (5.hafta) »`` group modules)."""
+    rows: List[Dict[str, Any]] = []
+    modules: Dict[str, Tag] = {}
+    for span in soup.find_all(id=re.compile(r"_kupaMaclari_ctl\d+_lblSkor$")):
+        module = span.find_parent(id=re.compile(r"ctnr_div$"))
+        if module is not None:
+            modules.setdefault(module.get("id", ""), module)
+
+    for module in modules.values():
+        m = _KUPA_GROUP_RE.search(_clean(module.get_text(" ")))
+        if m is None:
+            continue
+        if staged_only and not _STAGED_TITLE_RE.search(_table_title(module)):
+            continue
+        group_name = m.group(1)
+        for score_link in module.find_all(id=re.compile(r"_kupaMaclari_ctl\d+_lblSkor$")):
+            prefix = score_link["id"][: -len("lblSkor")]
+            tarih = module.find(id=prefix + "lblTarih")
+            saat = module.find(id=prefix + "lbSaat")
+            home_link = module.find(id=prefix + "lblTakim1")
+            away_link = module.find(id=prefix + "lblTakim2")
+            if home_link is None or away_link is None:
+                continue
+            home_score = away_score = None
+            sm = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", _clean(score_link.get_text()))
+            if sm:
+                home_score, away_score = int(sm.group(1)), int(sm.group(2))
+            rows.append({
+                "page_id": page_id,
+                "week": week,
+                "group": group_name,
+                "match_id": _extract_query_int(score_link.get("href", ""), "macId"),
+                "date": _clean(tarih.get_text()) if tarih else "",
+                "time": _clean(saat.get_text()) if saat else "",
+                "home_team": _clean(home_link.get_text()),
+                "home_team_id": _extract_query_int(home_link.get("href", ""), "kulupID"),
+                "away_team": _clean(away_link.get_text()),
+                "away_team_id": _extract_query_int(away_link.get("href", ""), "kulupID"),
+                "home_score": home_score,
+                "away_score": away_score,
+            })
+    return rows
+
+
+def parse_stage_fixtures(
+    html: str, *, page_id: int, week: int, stage: str
+) -> pd.DataFrame:
+    """Parse one stage group's weekly fixtures (2011/12 Süper Final)."""
+    soup = _soup(html)
+    modules: Dict[str, Tag] = {}
+    for span in soup.find_all(id=re.compile(r"_kupaMaclari_ctl\d+_lblSkor$")):
+        module = span.find_parent(id=re.compile(r"ctnr_div$"))
+        if module is not None:
+            modules.setdefault(module.get("id", ""), module)
+
+    if not modules:
+        raise DataNotAvailableError(
+            f"No stage fixtures found for pageID={page_id}, hafta={week}."
+        )
+
+    titled = [(_table_title(module), module) for module in modules.values()]
+    wanted = stage.strip().lower()
+    matched = [(title, module) for title, module in titled if wanted in title.lower()]
+    if not matched:
+        raise InvalidParameterError(
+            f"stage={stage!r} matched no fixtures on pageID={page_id}, hafta={week}. "
+            f"Available: {[title for title, _ in titled]}."
+        )
+
+    rows: List[Dict[str, Any]] = []
+    for title, module in matched:
+        for score_link in module.find_all(id=re.compile(r"_kupaMaclari_ctl\d+_lblSkor$")):
+            prefix = score_link["id"][: -len("lblSkor")]
+            tarih = module.find(id=prefix + "lblTarih")
+            saat = module.find(id=prefix + "lbSaat")
+            home_link = module.find(id=prefix + "lblTakim1")
+            away_link = module.find(id=prefix + "lblTakim2")
+            if home_link is None or away_link is None:
+                continue
+            home_score = away_score = None
+            m = re.match(r"^\s*(\d+)\s*-\s*(\d+)\s*$", _clean(score_link.get_text()))
+            if m:
+                home_score, away_score = int(m.group(1)), int(m.group(2))
+            rows.append({
+                "page_id": page_id,
+                "week": week,
+                "stage": title,
+                "group": "",
+                "match_id": _extract_query_int(score_link.get("href", ""), "macId"),
+                "date": _clean(tarih.get_text()) if tarih else "",
+                "time": _clean(saat.get_text()) if saat else "",
+                "home_team": _clean(home_link.get_text()),
+                "home_team_id": _extract_query_int(home_link.get("href", ""), "kulupID"),
+                "away_team": _clean(away_link.get_text()),
+                "away_team_id": _extract_query_int(away_link.get("href", ""), "kulupID"),
+                "home_score": home_score,
+                "away_score": away_score,
+            })
+
+    if not rows:
+        raise DataNotAvailableError(
+            f"No stage fixtures parsed for pageID={page_id}, hafta={week}."
+        )
+    return pd.DataFrame(rows)
 
 
 # ---------------------------------------------------------------------------
@@ -391,14 +517,20 @@ def parse_group_ids(html: str) -> Dict[str, int]:
     return mapping
 
 
-def parse_standings(html: str, *, page_id: int, week: int) -> pd.DataFrame:
-    soup = _soup(html)
-    table = soup.select_one("table.s-table")
-    if table is None:
-        raise DataNotAvailableError(
-            f"No standings table found for pageID={page_id}, hafta={week}."
-        )
+class StandingsNotPublishedError(DataNotAvailableError):
+    """The page carries no league table at all (e.g. Süper Lig 1959-1983/84)."""
 
+
+def _table_title(table: Tag) -> str:
+    """Return the nearest non-empty module title above ``table``."""
+    for div in table.find_all_previous("div", class_="moduleTitle"):
+        title = _clean(div.get_text())
+        if title:
+            return title
+    return ""
+
+
+def _parse_standings_table(table: Tag, *, page_id: int, week: int) -> pd.DataFrame:
     rows: List[Dict[str, Any]] = []
     for tr in table.select("tr"):
         # Header row uses class ``griBG`` on the <tr>; data rows put class on the <td>.
@@ -441,12 +573,60 @@ def parse_standings(html: str, *, page_id: int, week: int) -> pd.DataFrame:
             "goal_diff": stats[6],
             "points": stats[7],
         })
+    return pd.DataFrame(rows)
 
-    if not rows:
+
+def _table_has_group(table: Tag, group_id: int) -> bool:
+    """Whether the module around ``table`` links to ``grupID=group_id``."""
+    module = table.find_parent(id=re.compile(r"ctnr_div$"))
+    if module is None:
+        return False
+    pattern = re.compile(rf"grupID={group_id}(?!\d)", re.IGNORECASE)
+    return module.find("a", href=pattern) is not None
+
+
+def parse_standings(
+    html: str,
+    *,
+    page_id: int,
+    week: int,
+    stage: Optional[str] = None,
+    group_id: Optional[int] = None,
+) -> pd.DataFrame:
+    """Parse a TFF standings page, choosing among its tables by ``stage``,
+    ``group_id`` or, by default, the one with the most rows."""
+    soup = _soup(html)
+    tables = [
+        (_table_title(t), df, t)
+        for t in soup.select("table.s-table")
+        for df in [_parse_standings_table(t, page_id=page_id, week=week)]
+        if not df.empty
+    ]
+    if not soup.select_one("table.s-table"):
+        raise StandingsNotPublishedError(
+            f"No standings table found for pageID={page_id}, hafta={week}."
+        )
+    if not tables:
         raise DataNotAvailableError(
             f"No standings rows parsed for pageID={page_id}, hafta={week}."
         )
-    return pd.DataFrame(rows)
+
+    if stage is None:
+        if group_id is not None:
+            for _, df, table in tables:
+                if _table_has_group(table, group_id):
+                    return df
+        return max(tables, key=lambda t: len(t[1]))[1]
+
+    wanted = stage.strip().lower()
+    for title, df, _ in tables:
+        if wanted in title.lower():
+            df.insert(2, "stage", title)
+            return df
+    raise InvalidParameterError(
+        f"stage={stage!r} matched no table on pageID={page_id}. "
+        f"Available: {[title for title, _, _ in tables]}."
+    )
 
 
 # ---------------------------------------------------------------------------

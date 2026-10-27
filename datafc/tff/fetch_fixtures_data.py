@@ -2,9 +2,14 @@ from typing import TYPE_CHECKING, Optional
 
 import pandas as pd
 
-from datafc.exceptions import InvalidParameterError
+from datafc.exceptions import DataNotAvailableError, InvalidParameterError
 from datafc.tff._client import TFFClient
-from datafc.tff._parsers import parse_fixtures, parse_playoff_fixtures
+from datafc.tff._parsers import (
+    parse_fixtures,
+    parse_group_ids,
+    parse_playoff_fixtures,
+    parse_stage_fixtures,
+)
 from datafc.utils._config import get_tff_base_url
 
 if TYPE_CHECKING:
@@ -29,6 +34,7 @@ def fixtures_data(
     group: Optional[str] = None,
     playoff: bool = False,
     round: Optional[str] = None,
+    stage: Optional[str] = None,
     rate_limit: float = 2.0,
     cache: Optional["DiskCache"] = None,
 ) -> pd.DataFrame:
@@ -40,6 +46,13 @@ def fixtures_data(
         query parameter. ``group`` optionally filters to one group on
         multi-group league pages (2. Lig ``"Kırmızı"`` / ``"Beyaz"``;
         3. Lig ``"01"`` / ``"02"`` / ``"03"`` / ``"04"``). Case-insensitive.
+
+    ``stage`` selects a stage group's matches instead of the regular season,
+    for seasons that run one (Süper Lig 2011/12 Süper Final:
+    ``stage="Şampiyonluk"`` or ``stage="Avrupa"``, case-insensitive, partial
+    match ok). It requires ``week`` (1-6 for the Süper Final; TFF renders no
+    stage matches beyond it) and adds a ``stage`` column. Without ``stage``
+    only the regular-season matches are returned.
 
     Play-off mode (``playoff=True``):
         ``week`` is ignored (play-off matches don't fit the weekly grid).
@@ -85,10 +98,29 @@ def fixtures_data(
     url = f"{base}&hafta={week}"
     with TFFClient(rate_limit=rate_limit, cache=cache) as client:
         html = client.get(url)
-    df = parse_fixtures(html, page_id=page_id, week=week)
+        try:
+            df: Optional[pd.DataFrame] = _parse(html, page_id, week, stage)
+        except DataNotAvailableError:
+            if group is None or stage is not None:
+                raise
+            df = None
+
+        if group is not None and stage is None and (
+            df is None or not _group_mask(df, group).any()
+        ):
+            group_ids = parse_group_ids(html)
+            gid = next((g for label, g in group_ids.items()
+                        if _matches_group(label, group)), None)
+            if gid is not None:
+                html = client.get(f"{url}&grupID={gid}")
+                df = _parse(html, page_id, week, stage)
+        if df is None:
+            raise DataNotAvailableError(
+                f"No fixtures found for pageID={page_id}, hafta={week}, group={group!r}."
+            )
 
     if group is not None:
-        mask = df["group"].apply(lambda g: _matches_group(g, group))
+        mask = _group_mask(df, group)
         if not mask.any():
             available = sorted(g for g in df["group"].unique() if g)
             raise InvalidParameterError(
@@ -98,3 +130,13 @@ def fixtures_data(
         df = df.loc[mask].reset_index(drop=True)
 
     return df
+
+
+def _parse(html: str, page_id: int, week: int, stage: Optional[str]) -> pd.DataFrame:
+    if stage is not None:
+        return parse_stage_fixtures(html, page_id=page_id, week=week, stage=stage)
+    return parse_fixtures(html, page_id=page_id, week=week)
+
+
+def _group_mask(df: pd.DataFrame, group: str) -> pd.Series:
+    return df["group"].apply(lambda g: _matches_group(g, group))

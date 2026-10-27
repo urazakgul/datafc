@@ -1,4 +1,4 @@
-# datafc v2.9.0
+# datafc v2.10.0
 
 Football data from **Sofascore**, **ClubElo**, **eloratings.net** (Elo since 1872) and **tff.org** (Turkish federation) as pandas DataFrames. 60 functions total, each with an async mirror under `datafc.aio`, optional `DiskCache`.
 
@@ -111,8 +111,8 @@ Süper Lig, 1. Lig, 2. Lig, 3. Lig.
 ### Discovery / league
 | Function | Purpose |
 | --- | --- |
-| `fixtures_data(page_id, week=None, group=None, playoff=False, round=None)` | weekly fixtures or play-off bracket |
-| `standings_data(page_id, week, group=None)` | league table (`group` required for 2. Lig / 3. Lig) |
+| `fixtures_data(page_id, week=None, group=None, playoff=False, round=None, stage=None)` | weekly fixtures or play-off bracket (`stage` picks a stage group, e.g. Süper Lig 2011/12 Süper Final) |
+| `standings_data(page_id, week, group=None, stage=None)` | league table (`group` required for 2. Lig / 3. Lig; `stage` picks a play-off table, e.g. Süper Lig 2011/12) |
 | `team_data(club_id)` | club profile |
 
 ### From `match_id`
