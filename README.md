@@ -1,4 +1,4 @@
-# datafc v2.10.0
+# datafc v2.11.0
 
 Football data from **Sofascore**, **ClubElo**, **eloratings.net** (Elo since 1872) and **tff.org** (Turkish federation) as pandas DataFrames. 60 functions total, each with an async mirror under `datafc.aio`, optional `DiskCache`.
 
@@ -64,6 +64,8 @@ Grouped by the argument each function needs. Chain them: id → root frame → d
 | `coordinates_data(lineups_df)` | touch heatmap per player |
 | `rating_breakdown_data(lineups_df)` | every pass / dribble / defensive action / ball-carry with start-end coordinates and outcome flags |
 
+Or skip `lineups_df` and pass ids directly: `coordinates_data(player_id=1091116, game_id=[16421105, 15534041])`. Both accept an int or a list; every player/game combination is requested and combinations the player did not play are skipped.
+
 ### From `squad_df`
 | Function | Purpose |
 | --- | --- |
@@ -73,6 +75,17 @@ Grouped by the argument each function needs. Chain them: id → root frame → d
 | `player_career_stats_data` | season-by-season career stats |
 | `player_national_team_data` | international career |
 | `player_match_log_data` | match-by-match in-game stats (wide) |
+
+Or skip `squad_df` and pass `player_id` (int or list) directly:
+
+```python
+from datafc import player_data, player_transfers_data
+
+player_data(player_id=1091116)
+player_transfers_data(player_id=[1091116, ...])
+```
+
+Pass either `squad_df` or `player_id`, not both. Without a `squad_df`, `player_name` is only filled by `player_data`; other functions leave it empty. Exports are named from the ids, e.g. `sofascore_player_data_player_1091116.json`, or `..._player_1091116_and_more.json` for a list (`sofascore_coordinates_data_player_1091116_game_16421105_and_more.json` for `coordinates_data`).
 
 ---
 

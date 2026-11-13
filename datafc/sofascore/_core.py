@@ -82,6 +82,7 @@ def export_df(
     season: Any = _SENTINEL,
     week_number: Any = _SENTINEL,
     include_week: bool = True,
+    label: Optional[str] = None,
 ) -> None:
     """Public wrapper that uses sentinel objects to distinguish 'unset' from None.
 
@@ -95,7 +96,7 @@ def export_df(
     if first_row is None and not df.empty:
         first_row = df.iloc[0]
 
-    kwargs: dict = dict(fn_name=fn_name, data_source=data_source)
+    kwargs: dict = dict(fn_name=fn_name, data_source=data_source, label=label)
 
     if country is _SENTINEL:
         kwargs["country"] = _resolve_field(first_row, "country", "")

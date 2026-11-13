@@ -25,7 +25,7 @@ Example::
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Sequence, Union
 from urllib.parse import quote
 
 import pandas as pd
@@ -87,7 +87,10 @@ from datafc.utils._cache import DiskCache
 from datafc.utils._config import API_URLS, WWW_URLS
 from datafc.utils._helpers import _cast_int_cols
 from datafc.utils._tournament_info import resolve_tournament_season
-from datafc.utils._validate import build_tournament_url, validate_df, validate_source
+from datafc.utils._validate import (
+    build_tournament_url, resolve_lineups_input, resolve_player_input,
+    validate_df, validate_source,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -465,7 +468,9 @@ async def pregame_form_data(
 # ---------------------------------------------------------------------------
 
 async def coordinates_data(
-    lineups_df: pd.DataFrame,
+    lineups_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
+    game_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -475,7 +480,7 @@ async def coordinates_data(
 ) -> pd.DataFrame:
     """Async version of coordinates_data(). Players with no heatmap data are silently skipped."""
     validate_source(data_source)
-    validate_df(lineups_df, "lineups_df")
+    lineups_df = resolve_lineups_input(lineups_df, player_id, game_id)
 
     unique_players = lineups_df[[
         "country", "tournament", "season", "week", "game_id", "team", "player_id", "player_name"
@@ -507,6 +512,7 @@ async def coordinates_data(
 
     export_df(
         result_df, fn_name="coordinates_data", data_source=data_source,
+        label=lineups_df.attrs.get("export_label"),
         output_dir=output_dir,
         first_row=lineups_df.iloc[0],
         enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
@@ -515,7 +521,9 @@ async def coordinates_data(
 
 
 async def rating_breakdown_data(
-    lineups_df: pd.DataFrame,
+    lineups_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
+    game_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -525,7 +533,7 @@ async def rating_breakdown_data(
 ) -> pd.DataFrame:
     """Async version of rating_breakdown_data(). Players with no data are silently skipped."""
     validate_source(data_source)
-    validate_df(lineups_df, "lineups_df")
+    lineups_df = resolve_lineups_input(lineups_df, player_id, game_id)
 
     unique_players = lineups_df[[
         "country", "tournament", "season", "week", "game_id", "team", "player_id", "player_name"
@@ -557,6 +565,7 @@ async def rating_breakdown_data(
 
     export_df(
         result_df, fn_name="rating_breakdown_data", data_source=data_source,
+        label=lineups_df.attrs.get("export_label"),
         output_dir=output_dir,
         first_row=lineups_df.iloc[0],
         enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
@@ -1305,7 +1314,8 @@ async def _per_player_concurrent(
 
 
 async def player_transfers_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1315,7 +1325,7 @@ async def player_transfers_data(
 ) -> pd.DataFrame:
     """Async version of player_transfers_data(). All player requests run in parallel."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
 
     records, failed = await _per_player_concurrent(
         squad_df, data_source, rate_limit, cache,
@@ -1340,6 +1350,7 @@ async def player_transfers_data(
         ) if t_id and s_id else ("", "", None)
         export_df(
             result_df, fn_name="player_transfers_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", "unknown"),
             tournament=first.get("tournament", "unknown"),
@@ -1350,7 +1361,8 @@ async def player_transfers_data(
 
 
 async def player_national_team_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1360,7 +1372,7 @@ async def player_national_team_data(
 ) -> pd.DataFrame:
     """Async version of player_national_team_data()."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
 
     records, _ = await _per_player_concurrent(
         squad_df, data_source, rate_limit, cache,
@@ -1377,6 +1389,7 @@ async def player_national_team_data(
         first = squad_df.iloc[0]
         export_df(
             result_df, fn_name="player_national_team_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", "unknown"),
             tournament=first.get("tournament", "unknown"),
@@ -1387,7 +1400,8 @@ async def player_national_team_data(
 
 
 async def player_attribute_overviews_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1397,7 +1411,7 @@ async def player_attribute_overviews_data(
 ) -> pd.DataFrame:
     """Async version of player_attribute_overviews_data(). All players fetched in parallel."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
 
     records, _ = await _per_player_concurrent(
         squad_df, data_source, rate_limit, cache,
@@ -1416,6 +1430,7 @@ async def player_attribute_overviews_data(
         first = squad_df.iloc[0]
         export_df(
             result_df, fn_name="player_attribute_overviews_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", "unknown"),
             tournament=first.get("tournament", "unknown"),
@@ -1426,7 +1441,8 @@ async def player_attribute_overviews_data(
 
 
 async def player_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1436,7 +1452,7 @@ async def player_data(
 ) -> pd.DataFrame:
     """Async version of player_data()."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
 
     def _parser(data, player_id, player_name):
         rec = player_profile_record_from_response(data, player_id, player_name)
@@ -1462,6 +1478,7 @@ async def player_data(
         ) if t_id and s_id else ("", "", None)
         export_df(
             result_df, fn_name="player_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", "unknown"),
             tournament=first.get("tournament", "unknown"),
@@ -1472,7 +1489,8 @@ async def player_data(
 
 
 async def player_match_log_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1482,7 +1500,7 @@ async def player_match_log_data(
 ) -> pd.DataFrame:
     """Async version of player_match_log_data(). All players fetched in parallel."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
     base = API_URLS[data_source]
 
     async def _fetch(client, player_id, player_name):
@@ -1520,6 +1538,7 @@ async def player_match_log_data(
         first = squad_df.iloc[0]
         export_df(
             result_df, fn_name="player_match_log_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", ""),
             tournament=first.get("tournament", ""),
@@ -1531,7 +1550,8 @@ async def player_match_log_data(
 
 
 async def player_career_stats_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional[DiskCache] = None,
@@ -1541,7 +1561,7 @@ async def player_career_stats_data(
 ) -> pd.DataFrame:
     """Async version of player_career_stats_data(). All player requests run in parallel."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
     base = API_URLS[data_source]
 
     async def _fetch(client, player_id, player_name):
@@ -1598,6 +1618,7 @@ async def player_career_stats_data(
         first = squad_df.iloc[0]
         export_df(
             result_df, fn_name="player_career_stats_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", "unknown"),
             tournament=first.get("tournament", "unknown"),

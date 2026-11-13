@@ -37,7 +37,12 @@ def _build_filename(
     fn_name: str,
     season=None,
     week_number=None,
+    label=None,
 ) -> str:
+    if label:
+        # ID-based fetches have no country/tournament context: <source>_<function>_<label>
+        return ".".join(["_".join([data_source, fn_name, _slugify(str(label))]), ext])
+
     t_slug = _slugify(str(tournament))
     if t_slug.isdigit():
         logger.warning(
@@ -78,10 +83,11 @@ def save_json(
     tournament: str,
     season=None,
     week_number=None,
+    label=None,
     output_dir: str = ".",
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
-    file_name = _build_filename("json", data_source, country, tournament, fn_name, season, week_number)
+    file_name = _build_filename("json", data_source, country, tournament, fn_name, season, week_number, label)
     file_path = os.path.join(output_dir, file_name)
     _warn_overwrite(file_path)
     try:
@@ -101,10 +107,11 @@ def save_excel(
     tournament: str,
     season=None,
     week_number=None,
+    label=None,
     output_dir: str = ".",
 ) -> None:
     os.makedirs(output_dir, exist_ok=True)
-    file_name = _build_filename("xlsx", data_source, country, tournament, fn_name, season, week_number)
+    file_name = _build_filename("xlsx", data_source, country, tournament, fn_name, season, week_number, label)
     file_path = os.path.join(output_dir, file_name)
     _warn_overwrite(file_path)
     try:
@@ -122,6 +129,7 @@ def save_parquet(
     tournament: str,
     season=None,
     week_number=None,
+    label=None,
     output_dir: str = ".",
 ) -> None:
     try:
@@ -132,7 +140,7 @@ def save_parquet(
         )
         return
     os.makedirs(output_dir, exist_ok=True)
-    file_name = _build_filename("parquet", data_source, country, tournament, fn_name, season, week_number)
+    file_name = _build_filename("parquet", data_source, country, tournament, fn_name, season, week_number, label)
     file_path = os.path.join(output_dir, file_name)
     _warn_overwrite(file_path)
     try:

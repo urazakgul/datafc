@@ -1,9 +1,9 @@
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 import pandas as pd
 from datafc.utils._client import SofascoreClient
 from datafc.utils._config import API_URLS
-from datafc.utils._validate import validate_source, validate_df
+from datafc.utils._validate import validate_source, resolve_player_input
 from datafc.sofascore._core import match_log_records_from_response, export_df
 from datafc.exceptions import APIError, DataNotAvailableError
 
@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 def player_match_log_data(
-    squad_df: pd.DataFrame,
+    squad_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional["DiskCache"] = None,
@@ -24,7 +25,7 @@ def player_match_log_data(
 ) -> pd.DataFrame:
     """Fetches match-by-match player statistics for each player in the squad dataset."""
     validate_source(data_source)
-    validate_df(squad_df, "squad_df")
+    squad_df = resolve_player_input(squad_df, player_id)
 
     records = []
     unique_players = squad_df[["player_id", "player_name"]].drop_duplicates()
@@ -67,6 +68,7 @@ def player_match_log_data(
         first = squad_df.iloc[0]
         export_df(
             result_df, fn_name="player_match_log_data", data_source=data_source,
+            label=squad_df.attrs.get("export_label"),
             output_dir=output_dir,
             country=first.get("country", ""),
             tournament=first.get("tournament", ""),

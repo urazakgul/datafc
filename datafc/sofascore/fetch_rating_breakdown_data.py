@@ -1,8 +1,8 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 import pandas as pd
 from datafc.utils._client import SofascoreClient
 from datafc.utils._config import API_URLS
-from datafc.utils._validate import validate_source, validate_df
+from datafc.utils._validate import validate_source, resolve_lineups_input
 from datafc.sofascore._core import rating_breakdown_records, export_df
 from datafc.exceptions import APIError, DataNotAvailableError, InvalidParameterError
 
@@ -11,7 +11,9 @@ if TYPE_CHECKING:
 
 
 def rating_breakdown_data(
-    lineups_df: pd.DataFrame,
+    lineups_df: Optional[pd.DataFrame] = None,
+    player_id: Union[int, Sequence[int], None] = None,
+    game_id: Union[int, Sequence[int], None] = None,
     data_source: str = "sofascore",
     rate_limit: float = 2.0,
     cache: Optional["DiskCache"] = None,
@@ -29,7 +31,7 @@ def rating_breakdown_data(
     Players with no rating breakdown data (404/403) are silently skipped.
     """
     validate_source(data_source)
-    validate_df(lineups_df, "lineups_df")
+    lineups_df = resolve_lineups_input(lineups_df, player_id, game_id)
 
     unique_players = lineups_df[[
         "country", "tournament", "season", "week", "game_id", "team", "player_id", "player_name"
@@ -59,6 +61,7 @@ def rating_breakdown_data(
 
     export_df(
         result_df, fn_name="rating_breakdown_data", data_source=data_source,
+        label=lineups_df.attrs.get("export_label"),
         output_dir=output_dir,
         first_row=lineups_df.iloc[0],
         enable_json_export=enable_json_export, enable_excel_export=enable_excel_export,
